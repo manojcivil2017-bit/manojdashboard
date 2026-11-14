@@ -1,5 +1,5 @@
-// Offline support: app files are cached; the data file is always fetched fresh when online.
-const CACHE = "pd-status-v7";
+// Offline support: app files are cached; data files are always fetched fresh when online.
+const CACHE = "rating-status-v8";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -11,12 +11,13 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== location.origin) return;
-  // Network first for everything (always newest), cache as offline fallback.
+  // Network first (always newest), cache as offline fallback.
   e.respondWith(
     fetch(e.request).then(res => {
       if (res.ok) {
         const copy = res.clone();
-        const key = url.pathname.endsWith("status.xlsx") ? "status.xlsx" : e.request;
+        const file = url.pathname.split("/").pop();
+        const key = file.endsWith(".xlsx") ? file : e.request;
         caches.open(CACHE).then(c => c.put(key, copy));
       }
       return res;

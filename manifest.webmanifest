@@ -1,7 +1,7 @@
 {
-  "name": "PD Rating Status",
-  "short_name": "PD Status",
-  "description": "PD Rating project status dashboard with WhatsApp sharing",
+  "name": "Rating Exercises Dashboard",
+  "short_name": "Rating Status",
+  "description": "Status of NHAI, NHIDCL and MoRTH rating exercises with WhatsApp sharing",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

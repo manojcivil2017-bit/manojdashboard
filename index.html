@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>PD Rating Status</title>
+<title>Rating Exercises Dashboard</title>
 <meta name="theme-color" content="#0f3d5e">
-<meta name="description" content="PD Rating project status dashboard">
+<meta name="description" content="Status dashboard for NHAI, NHIDCL and MoRTH rating exercises">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="PD Status">
+<meta name="apple-mobile-web-app-title" content="Rating Status">
 <style>
 :root{
   --bg:#f3f5f8;--card:#fff;--ink:#14212b;--muted:#5d6b78;--line:#e2e7ec;
@@ -164,7 +164,7 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
 .grp .sm{display:none}
 @media(max-width:700px){
   .ptab{min-width:0;font-size:13px}
-  .ptab .c-upn,.ptab .c-ro,.ptab .c-piu,.ptab .idx{display:none}
+  .ptab .c-x,.ptab .idx{display:none}
   .ptab .pname{min-width:0}
   .psub{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:4px;font-weight:500;font-size:11.5px;color:var(--muted)}
   .ptab td:nth-child(6){width:120px}
@@ -181,12 +181,69 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
   .grp td small{font-size:10px}
 }
 #msgBox{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+/* v2 multi-exercise */
+[hidden]{display:none!important}
+.topbar{position:sticky;top:0;z-index:20}
+.topbar header{position:static}
+header .orgline{font-size:11px;font-weight:600;letter-spacing:.4px;opacity:.75;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header h1{font-size:18px;line-height:1.2}
+@media(max-width:480px){header h1{font-size:16px}}
+.hbtn.home{min-width:34px;padding:0 4px}
+.tabs{background:#fff;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto;padding:8px 12px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:5px 12px;cursor:pointer;font-weight:700;font-size:13px;line-height:1.15;text-align:left;color:var(--ink)}
+.tab small{display:block;font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--c)}
+.tab.on{background:var(--c);border-color:var(--c);color:#fff}
+.tab.on small{color:rgba(255,255,255,.8)}
+@media(min-width:900px){.tabs{justify-content:center}}
+.orgtag{display:inline-block;background:var(--c,#14212b);color:#fff;font-size:11px;font-weight:800;letter-spacing:.6px;border-radius:6px;padding:3px 7px;vertical-align:middle}
+.orgtag.sm{font-size:9.5px;padding:2px 5px}
+.ctx{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--c);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--muted)}
+.ctx .orgtag{background:var(--c)}
+.ctx b{color:var(--ink);font-size:15px}
+.filters.one{grid-template-columns:1fr}
+@media(min-width:760px){.filters.one{grid-template-columns:1fr 2fr}}
+.hero{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:14px;color:var(--muted)}
+.hero b{color:var(--ink)}
+.excards{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:12px}
+@media(min-width:760px){.excards{grid-template-columns:1fr 1fr}}
+.excard{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-top:6px solid var(--c);border-radius:16px;padding:14px;cursor:pointer;box-shadow:0 1px 2px rgba(16,40,60,.05),0 6px 18px rgba(16,40,60,.06);transition:transform .12s}
+.excard:hover{transform:translateY(-2px)}
+.excard .orgtag{background:var(--c)}
+.exhead{display:flex;justify-content:space-between;align-items:center}
+.prevtag{background:#fff7e6;color:#9a5b00;border:1px solid #f5d9a6;border-radius:6px;font-size:11px;font-weight:700;padding:2px 7px}
+.exname{font-size:19px;font-weight:800;color:var(--c);margin-top:8px}
+.exorg{font-size:12px;color:var(--muted);margin-bottom:10px}
+.extotal{font-size:14px;margin-bottom:8px}.extotal b{font-size:24px}.extotal span{color:var(--muted);font-size:12px}
+.exstats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.exstats div{background:#f6f8fa;border-radius:10px;padding:7px 8px;position:relative}
+.exstats i{position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px}
+.exstats b{display:block;font-size:17px}.exstats small{font-size:11px;color:var(--muted)}
+.exfoot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-top:10px;font-size:12px;color:var(--muted)}
+.exfoot .warnt{color:var(--warn);font-weight:700}
+.exempty{color:var(--muted);padding:18px 0}
+.exopen{margin-top:12px;text-align:right;font-weight:800;color:var(--c);font-size:14px}
+.cmp .gname{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ptab th{background:var(--c,#0f3d5e)}
+.step{font-weight:700;font-size:13px;margin:12px 0 8px}
+#upEx{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.upopt{text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px;cursor:pointer}
+.upopt .orgtag{background:var(--c)}
+.upopt b{display:block;margin-top:6px;font-size:13.5px;color:var(--c)}
+.upopt small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.upopt.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 8%,#fff);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 25%,transparent)}
+#upMsg ul{margin:6px 0 0 18px;padding:0}
+#upMsg .row{margin-top:10px}
 </style>
+
 </head>
 <body>
-<header>
+<div class="topbar">
+<header id="hdr">
+  <button class="hbtn home" id="btnHome" title="All exercises" hidden><svg viewBox="0 0 24 24"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg></button>
   <div class="t">
-    <h1>PD Rating Status</h1>
+    <div class="orgline" id="hOrg"></div>
+    <h1 id="hTitle">Rating Exercises Dashboard</h1>
     <div class="sub" id="asof">Loading…</div>
   </div>
   <button class="hbtn" id="btnPdf" title="Download PDF report"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM12 11v5.2l-2.1-2.1-1.4 1.4L12 19l3.5-3.5-1.4-1.4-2.1 2.1V11h-2z"/></svg><span class="lbl">PDF</span></button>
@@ -194,10 +251,12 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
   <button class="hbtn" id="btnSettings" title="Settings"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.4-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4l-.4 2.7a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.4 2.5-1c.5.4 1.1.7 1.7 1l.4 2.7h4l.4-2.7c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.4L19.4 13zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
   <input type="file" id="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 </header>
+<nav class="tabs" id="tabs"></nav>
+</div>
 
 <main id="main">
   <div id="banner"></div>
-  <div id="app"><div class="loading">Loading project data…</div></div>
+  <div id="app"><div class="loading">Loading rating exercises…</div></div>
 </main>
 
 <button class="fab" id="fab" title="Share on WhatsApp"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg><span>Share status</span></button>
@@ -209,11 +268,11 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
     <button class="bigopt" id="optMsg"><span class="ic wa"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></span><span><b>Share status message</b><small>Text summary opens in WhatsApp</small></span></button>
     <button class="bigopt" id="optPdfShare"><span class="ic pdf">PDF</span><span><b>Share PDF report on WhatsApp</b><small>On your phone, choose WhatsApp in the share menu</small></span></button>
     <button class="bigopt" id="optPdfDl"><span class="ic dl">⬇</span><span><b>Download PDF report</b><small>Save the report to this device</small></span></button>
-    <div class="hint" id="pdfHint">The PDF covers the current filters. Project-wise details are included only when a PIU is selected.</div>
+    <div class="hint" id="pdfHint"></div>
   </div>
   <div id="msgBox" hidden>
     <div class="seg" id="shareOpts">
-      <label><input type="checkbox" id="optBreak" checked> Breakdown by RO / PIU</label>
+      <label id="optBreakWrap"><input type="checkbox" id="optBreak" checked> Breakdown by RO / PIU / PMU</label>
       <label><input type="checkbox" id="optStale" checked> Stale-update count</label>
       <label><input type="checkbox" id="optLink" checked> Dashboard link</label>
     </div>
@@ -226,13 +285,23 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
   </div>
 </div></div>
 
+<div class="modal" id="mUpload"><div class="sheet">
+  <h3>Upload Excel <button class="x" data-close>×</button></h3>
+  <div class="step">Step 1 · Which rating exercise is this file for?</div>
+  <div id="upEx"></div>
+  <div class="step">Step 2 · Choose the Excel file</div>
+  <button class="btn primary" id="upPick" style="width:100%">Choose Excel file…</button>
+  <div id="upMsg"></div>
+  <div class="hint">The file is first shown as a preview on this device only. Then tap <b>Publish for everyone</b>.</div>
+</div></div>
+
 <div class="modal" id="mSettings"><div class="sheet">
   <h3>Settings <button class="x" data-close>×</button></h3>
   <label for="setStale">Flag "In progress" projects not updated for more than (days)</label>
   <input type="number" id="setStale" min="1" max="365">
   <label for="setToken">GitHub access token (only for the person who publishes)</label>
   <input type="password" id="setToken" placeholder="github_pat_…" autocomplete="off">
-  <div class="hint">Lets this device publish a new Excel file so everyone sees it. Stored only on this device. Leave empty if you only view.</div>
+  <div class="hint">Lets this device publish new Excel files so everyone sees them. Stored only on this device.</div>
   <label for="setRepo">GitHub repository (owner/name)</label>
   <input type="text" id="setRepo" placeholder="owner/pd-dashboard">
   <div class="row">
@@ -257,8 +326,7 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
 
 <script>
 "use strict";
-const APP_VERSION = "1.3.3";
-const DATA_FILE = "status.xlsx";
+const APP_VERSION = "2.0.0";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem("pd_"+k, JSON.stringify(v)); }catch(e){} }
@@ -341,6 +409,28 @@ async function readXlsx(buf){
   return rows;
 }
 
+
+/* ---------- Rating exercises ---------- */
+const EXERCISES = [
+  { id: "nhai-pd", org: "NHAI", orgFull: "National Highways Authority of India", name: "PD Rating", file: "nhai-pd.xlsx",
+    idLabel: "UPN ID", levels: [["ro", "RO"], ["unit", "PIU"]], color: "#0f3d5e", color2: "#1f6aa0", rgb: [15, 61, 94] },
+  { id: "nhidcl-aeie", org: "NHIDCL", orgFull: "National Highways & Infrastructure Development Corporation Ltd", name: "AE/IE Consultant Rating", file: "nhidcl-aeie.xlsx",
+    idLabel: "UPN", levels: [["unit", "PMU"]], color: "#0b6e69", color2: "#16958e", rgb: [11, 110, 105] },
+  { id: "morth-dpr", org: "MoRTH", orgFull: "Ministry of Road Transport & Highways", name: "DPR Consultant Rating", file: "morth-dpr.xlsx",
+    idLabel: "UPC", levels: [["ro", "RO"]], color: "#8a3a12", color2: "#b5541f", rgb: [138, 58, 18] },
+  { id: "morth-aeie", org: "MoRTH", orgFull: "Ministry of Road Transport & Highways", name: "AE/IE Consultant Rating", file: "morth-aeie.xlsx",
+    idLabel: "UPC", levels: [["ro", "RO"]], color: "#8a3a12", color2: "#b5541f", rgb: [138, 58, 18] }
+];
+const exById = id => EXERCISES.find(e => e.id === id);
+const exTitle = ex => `${ex.org} · ${ex.name}`;
+function guessEx(fname){
+  const n = String(fname || "").toLowerCase();
+  if (/nhidcl/.test(n)) return "nhidcl-aeie";
+  if (/morth/.test(n)) return /dpr/.test(n) ? "morth-dpr" : /ae.?ie/.test(n) ? "morth-aeie" : null;
+  if (/nhai|pd[_ ]?rating/.test(n)) return "nhai-pd";
+  return null;
+}
+
 /* ---------- Turn sheet rows into projects ---------- */
 function parseDate(v){
   if (v == null || v === "" || v === "-") return null;
@@ -354,26 +444,26 @@ function parseDate(v){
 }
 function normStatus(s, prog){
   const t = String(s || "").trim().toUpperCase().replace(/[_-]+/g, " ");
-  if (/COMPLET|DONE|CLOSED/.test(t)) return "COMPLETED";
+  if (/COMPLET|DONE|CLOSED|SUBMITTED/.test(t)) return "COMPLETED";
   if (/NOT\s*START|YET TO|PENDING/.test(t)) return "NOT STARTED";
-  if (/PROGRESS|ONGOING|WIP|STARTED/.test(t)) return "IN PROGRESS";
+  if (/PROGRESS|ONGOING|WIP|STARTED|DRAFT/.test(t)) return "IN PROGRESS";
   if (prog != null) return prog >= 100 ? "COMPLETED" : prog > 0 ? "IN PROGRESS" : "NOT STARTED";
   return t || "NOT STARTED";
 }
 function toProjects(rows){
   const want = {
-    upn: /upn|project\s*id|^id$/i, ro: /^ro$|regional/i, piu: /^piu/i,
+    upn: /^upn|^upc|project\s*id|^id$|project\s*code/i, ro: /^ro$|regional/i, unit: /^piu|^pmu|^unit/i,
     name: /project\s*name|name of|^name$|description/i, prog: /progress|%/i,
     status: /status/i, upd: /updated|update|date/i
   };
-  let hi = -1, map = null;
+  let hi = -1, map = null, heads = null;
   for (let i = 0; i < Math.min(rows.length, 15); i++) {
     const r = (rows[i] || []).map(x => String(x == null ? "" : x).trim());
     const m = {};
     for (const [k, re] of Object.entries(want)) { const j = r.findIndex((h, idx) => h && re.test(h) && !Object.values(m).includes(idx)); if (j >= 0) m[k] = j; }
-    if (m.status != null && (m.upn != null || m.name != null)) { hi = i; map = m; break; }
+    if (m.status != null && (m.upn != null || m.name != null)) { hi = i; map = m; heads = r; break; }
   }
-  if (!map) throw new Error("Could not find the header row. The sheet needs columns like UPN ID, RO, PIU, Project Name, Progress (%), Status, Last Updated.");
+  if (!map) throw new Error("Could not find the header row. The sheet needs columns like Project ID (UPN/UPC), RO/PIU/PMU, Project Name, Progress (%), Status, Last Updated.");
   const out = [];
   let maxProg = 0;
   for (let i = hi + 1; i < rows.length; i++) {
@@ -385,7 +475,7 @@ function toProjects(rows){
     if (typeof p === "number" && p > maxProg) maxProg = p;
     out.push({
       upn: String(g("upn") ?? "").trim(), ro: String(g("ro") ?? "").trim() || "(No RO)",
-      piu: String(g("piu") ?? "").trim() || "(No PIU)", name: String(g("name") ?? "").trim(),
+      unit: String(g("unit") ?? "").trim() || "(None)", name: String(g("name") ?? "").trim(),
       prog: p, rawStatus: g("status"), upd: parseDate(g("upd"))
     });
   }
@@ -394,16 +484,39 @@ function toProjects(rows){
     if (frac && o.prog != null) o.prog = o.prog * 100;
     if (o.prog != null) o.prog = Math.max(0, Math.min(100, Math.round(o.prog * 10) / 10));
     o.status = normStatus(o.rawStatus, o.prog);
-    o.hay = (o.upn + " " + o.name + " " + o.ro + " " + o.piu).toLowerCase();
+    o.hay = (o.upn + " " + o.name + " " + o.ro + " " + o.unit).toLowerCase();
   }
   if (!out.length) throw new Error("No project rows found below the header.");
+  out.cols = { ro: map.ro != null, unit: map.unit != null, unitHead: map.unit != null ? heads[map.unit] : "" };
   return out;
+}
+/* Does this file have the columns the exercise needs? Returns an error text or "" */
+function fitError(ex, projects){
+  const c = projects.cols;
+  for (const [f, label] of ex.levels) {
+    if (f === "ro" && !c.ro) return `This file has no RO column, so it does not look like the ${exTitle(ex)} file.`;
+    if (f === "unit" && (!c.unit || !new RegExp("^" + label, "i").test(c.unitHead))) return `This file has no ${label} column, so it does not look like the ${exTitle(ex)} file.`;
+  }
+  if (ex.levels.length === 1 && ex.levels[0][0] === "ro" && c.unit) return `This file has a ${c.unitHead} column, so it looks like the ${/pmu/i.test(c.unitHead) ? "NHIDCL" : "NHAI"} file, not ${exTitle(ex)}.`;
+  return "";
+}
+/* Which published exercise shares the most project IDs with this file? */
+function bestOverlap(projects){
+  const ids = new Set(projects.map(p => p.upn).filter(Boolean));
+  let best = null;
+  for (const ex of EXERCISES) {
+    const d = S.D[ex.id]; if (!d || !d.pub) continue;
+    let hit = 0; for (const p of d.pub) if (ids.has(p.upn)) hit++;
+    const r = ids.size ? hit / ids.size : 0;
+    if (!best || r > best.r) best = { id: ex.id, r };
+  }
+  return best;
 }
 
 /* ---------- State ---------- */
 const S = {
-  all: [], source: "", fileDate: null, isLocal: false, localFile: null, localBuf: null,
-  f: { ro: "", piu: "", status: "", q: "", stale: false },
+  ex: null, D: {},
+  f: { l1: "", l2: "", status: "", q: "", stale: false },
   shown: 30, showProj: false, sortKey: "total", sortDir: -1,
   staleDays: LS.get("staleDays", 15)
 };
@@ -416,10 +529,14 @@ const stInfo = k => STATUSES.find(s => s.k === k) || { k, label: k, c: "#888", c
 const today = () => { const d = new Date(); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); };
 const isStale = p => p.status === "IN PROGRESS" && (!p.upd || (today() - p.upd.getTime()) / 864e5 > S.staleDays);
 const latestUpd = list => list.reduce((m, p) => p.upd && (!m || p.upd > m) ? p.upd : m, null);
+const EX = () => exById(S.ex);
+const rowsOf = id => (S.D[id] && S.D[id].all) || [];
+const lv = n => EX().levels[n];   // [field, label] or undefined
+const valLabel = (label, v) => new RegExp("^" + label + "\\b", "i").test(v) || /^(RO|PMU|PIU)\b/i.test(v) ? v : `${label} ${v}`;
 
 function filtered(){
-  const { ro, piu, status, q, stale } = S.f, qq = q.trim().toLowerCase();
-  return S.all.filter(p => (!ro || p.ro === ro) && (!piu || p.piu === piu) && (!status || p.status === status)
+  const { l1, l2, status, q, stale } = S.f, qq = q.trim().toLowerCase(), L1 = lv(0), L2 = lv(1);
+  return rowsOf(S.ex).filter(p => (!l1 || p[L1[0]] === l1) && (!l2 || !L2 || p[L2[0]] === l2) && (!status || p.status === status)
     && (!stale || isStale(p)) && (!qq || p.hay.includes(qq)));
 }
 function counts(list){
@@ -430,53 +547,84 @@ function counts(list){
   return c;
 }
 const uniq = (list, k) => Array.from(new Set(list.map(p => p[k]))).sort((a, b) => a.localeCompare(b));
-
-/* ---------- Rendering ---------- */
-function stackBar(c){
-  return `<div class="stack">${STATUSES.map(s => c[s.k] ? `<i style="width:${c[s.k] * 100 / c.total}%;background:${s.c}" title="${s.label}: ${c[s.k]}"></i>` : "").join("")}</div>`;
-}
 const ST_ORDER = { "IN PROGRESS": 0, "NOT STARTED": 1, "COMPLETED": 2 };
 const sortProjects = list => list.slice().sort((a, b) => (ST_ORDER[a.status] ?? 3) - (ST_ORDER[b.status] ?? 3) || (b.prog ?? -1) - (a.prog ?? -1) || a.name.localeCompare(b.name));
 const statusText = p => p.status === "NOT STARTED" ? "Not started" : `${stInfo(p.status).label}${p.prog == null ? "" : " · " + p.prog + "%"}`;
-const scopeLabel = () => S.f.piu ? `PIU ${S.f.piu}${S.f.ro ? " (" + S.f.ro + ")" : ""}` : (S.f.ro || "All ROs");
-function groupRows(src, by){
+/* the deepest level picked in the filters ⇒ project details go into the PDF */
+const atLowestLevel = () => { const L2 = lv(1); return L2 ? !!S.f.l2 : !!S.f.l1; };
+function scopeLabel(){
+  const L1 = lv(0), L2 = lv(1);
+  if (L2 && S.f.l2) return `${valLabel(L2[1], S.f.l2)}${S.f.l1 ? " (" + S.f.l1 + ")" : ""}`;
+  if (S.f.l1) return valLabel(L1[1], S.f.l1);
+  return `All ${L1[1]}s`;
+}
+function groupLevel(){ const L1 = lv(0), L2 = lv(1); if (!S.f.l1) return L1; if (L2 && !S.f.l2) return L2; return null; }
+function groupRows(src, field){
   const groups = {};
-  for (const p of src) (groups[p[by]] ||= []).push(p);
+  for (const p of src) (groups[p[field]] ||= []).push(p);
   return Object.entries(groups).map(([name, ps]) => ({ name, ...counts(ps) }));
 }
 const WA_SVG = `<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>`;
+function stackBar(c){
+  return `<div class="stack">${STATUSES.map(s => c[s.k] ? `<i style="width:${c[s.k] * 100 / c.total}%;background:${s.c}" title="${s.label}: ${c[s.k]}"></i>` : "").join("")}</div>`;
+}
 
+/* ---------- Rendering ---------- */
+function renderChrome(){
+  const ex = EX(), hdr = $("#hdr");
+  $("#btnHome").hidden = !ex;
+  if (ex) {
+    hdr.style.background = `linear-gradient(135deg, ${ex.color} 0%, ${ex.color2} 100%)`;
+    $("#hOrg").textContent = ex.orgFull;
+    $("#hTitle").textContent = exTitle(ex);
+    const all = rowsOf(ex.id);
+    $("#asof").textContent = all.length ? `${fmt(all.length)} projects · data as of ${fdate(latestUpd(all))}` : "No data published yet";
+    document.title = `${exTitle(ex)} – Status`;
+  } else {
+    hdr.style.background = "";
+    $("#hOrg").textContent = "NHAI · NHIDCL · MoRTH";
+    $("#hTitle").textContent = "Rating Exercises Dashboard";
+    $("#asof").textContent = `${EXERCISES.length} ongoing rating exercises`;
+    document.title = "Rating Exercises Dashboard";
+  }
+  $("#tabs").innerHTML = `<button class="tab ${ex ? "" : "on"}" data-go="" style="--c:#14212b"><small>All</small>Overview</button>` +
+    EXERCISES.map(e => `<button class="tab ${S.ex === e.id ? "on" : ""}" data-go="${e.id}" style="--c:${e.color}"><small>${e.org}</small>${esc(e.name.replace(" Consultant", ""))}</button>`).join("");
+  document.querySelectorAll("#tabs [data-go]").forEach(b => b.onclick = () => go(b.dataset.go));
+  const on = $("#tabs .tab.on"); if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest", inline: "center" });
+}
 function render(){
-  const app = $("#app");
-  if (!S.all.length) return;
-  const base = S.all.filter(p => (!S.f.ro || p.ro === S.f.ro));
-  const list = filtered();
-  const c = counts(list);
-  const ros = uniq(S.all, "ro"), pius = uniq(base, "piu");
-  const groupBy = S.f.ro ? "piu" : "ro", gLabel = groupBy === "ro" ? "RO" : "PIU";
-  // group table ignores the status chip so the bars stay meaningful
-  const gsrc = S.all.filter(p => (!S.f.ro || p.ro === S.f.ro) && (!S.f.piu || p.piu === S.f.piu));
-  const gl = groupRows(gsrc, groupBy);
+  renderChrome(); banner();
+  if (!S.ex) return renderHome();
+  const app = $("#app"), ex = EX(), d = S.D[ex.id] || {};
+  if (!d.all) { app.innerHTML = `<div class="empty">${d.err ? "No data has been published for this exercise yet." : "Loading…"}${d.err && $("#btnUpload") ? `<br><br><button class="btn primary" id="emptyUp">Upload Excel for ${esc(exTitle(ex))}</button>` : ""}</div>`; const eu = $("#emptyUp"); if (eu) eu.onclick = () => openUpload(ex.id); return; }
+  const L1 = lv(0), L2 = lv(1), all = d.all;
+  const list = filtered(), c = counts(list);
+  const l1s = uniq(all, L1[0]), l2s = L2 ? uniq(all.filter(p => !S.f.l1 || p[L1[0]] === S.f.l1), L2[0]) : [];
+  const G = groupLevel();
+  const gsrc = all.filter(p => (!S.f.l1 || p[L1[0]] === S.f.l1) && (!L2 || !S.f.l2 || p[L2[0]] === S.f.l2));
+  const gl = G ? groupRows(gsrc, G[0]) : [];
   const sk = S.sortKey, sd = S.sortDir;
   gl.sort((a, b) => sk === "name" ? sd * a.name.localeCompare(b.name) : (sd * ((a[sk] ?? 0) - (b[sk] ?? 0)) || a.name.localeCompare(b.name)));
   const ar = k => S.sortKey === k ? (S.sortDir === -1 ? " ▼" : " ▲") : "";
   const sorted = sortProjects(list);
-  const anyFilter = S.f.ro || S.f.piu || S.f.status || S.f.q || S.f.stale;
+  const anyFilter = S.f.l1 || S.f.l2 || S.f.status || S.f.q || S.f.stale;
+  const cols = [["upn", ex.idLabel], ...ex.levels];
 
   app.innerHTML = `
-  <div class="filters">
-    <select id="fRo" aria-label="RO"><option value="">All ROs (${ros.length})</option>${ros.map(r => `<option ${r === S.f.ro ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
-    <select id="fPiu" aria-label="PIU"><option value="">All PIUs (${pius.length})</option>${pius.map(r => `<option ${r === S.f.piu ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
-    <input class="search" id="fQ" type="search" placeholder="Search UPN ID, project name, PIU…" value="${esc(S.f.q)}">
+  <div class="ctx" style="--c:${ex.color}"><span class="orgtag">${ex.org}</span><span><b>${esc(ex.name)}</b> · ${esc(ex.orgFull)}</span></div>
+  <div class="filters ${L2 ? "" : "one"}">
+    <select id="fL1" aria-label="${L1[1]}"><option value="">All ${L1[1]}s (${l1s.length})</option>${l1s.map(r => `<option ${r === S.f.l1 ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
+    ${L2 ? `<select id="fL2" aria-label="${L2[1]}"><option value="">All ${L2[1]}s (${l2s.length})</option>${l2s.map(r => `<option ${r === S.f.l2 ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>` : ""}
+    <input class="search" id="fQ" type="search" placeholder="Search ${ex.idLabel}, project name, ${ex.levels.map(l => l[1]).join(", ")}…" value="${esc(S.f.q)}">
   </div>
   <div class="chips">
     ${STATUSES.map(s => `<button class="chip ${S.f.status === s.k ? "on" : ""}" data-st="${s.k}"><span class="dot" style="background:${s.c}"></span>${s.label}</button>`).join("")}
     <button class="chip ${S.f.stale ? "on" : ""}" id="chStale"><span class="dot" style="background:var(--warn)"></span>No update &gt; ${S.staleDays} days</button>
     ${anyFilter ? `<button class="chip clear" id="chClear">Clear filters ×</button>` : ""}
   </div>
-  <div class="scopebar">Showing: <b>${esc(scopeLabel())}</b></div>
+  <div class="scopebar">Showing: <b>${esc(exTitle(ex))}</b> › <b>${esc(scopeLabel())}</b></div>
   <div class="kpis">
-    <div class="kpi total" style="--c:var(--brand2)" data-k=""><div class="k">Total projects</div><div class="v">${fmt(c.total)}</div><div class="p">Average progress ${c.avg}%</div></div>
+    <div class="kpi total" style="--c:${ex.color}" data-k=""><div class="k">Total projects</div><div class="v">${fmt(c.total)}</div><div class="p">Average progress ${c.avg}%</div></div>
     ${STATUSES.map(s => `<div class="kpi" style="--c:${s.c}" data-k="${s.k}"><div class="k">${s.label}</div><div class="v" style="color:${s.c === "var(--ns)" ? "#5d6b78" : s.c}">${fmt(c[s.k] || 0)}</div><div class="p">${pct(c[s.k] || 0, c.total)}% of total</div></div>`).join("")}
     <div class="kpi" style="--c:var(--warn)" data-k="stale"><div class="k">No recent update</div><div class="v" style="color:var(--warn)">${fmt(c.stale)}</div><div class="p">In progress, &gt; ${S.staleDays} days</div></div>
   </div>
@@ -485,12 +633,12 @@ function render(){
     ${c.total ? stackBar(c) : ""}
     <div class="legend">${STATUSES.map(s => `<span><b style="background:${s.c}"></b>${s.label} ${fmt(c[s.k] || 0)} (${pct(c[s.k] || 0, c.total)}%)</span>`).join("")}</div>
   </div>
-  ${S.f.piu ? "" : `
+  ${!G ? "" : `
   <div class="card">
-    <h2>Status by ${gLabel}<span class="note">${S.f.ro ? esc(S.f.ro) + " · " : ""}tap a name to drill down</span></h2>
+    <h2>Status by ${G[1]}<span class="note">${S.f.l1 ? esc(S.f.l1) + " · " : ""}tap a name to drill down</span></h2>
     <div class="tscroll"><table class="grp">
       <thead><tr>
-        <th data-sort="name">${gLabel} name${ar("name")}</th>
+        <th data-sort="name">${G[1]} name${ar("name")}</th>
         <th class="n" data-sort="total">Total${ar("total")}</th>
         <th class="n" data-sort="donePct"><span class="lg">Completed</span><span class="sm">Done</span>${ar("donePct")}</th>
         <th class="n" data-sort="IN PROGRESS"><span class="lg">In progress</span><span class="sm">In prog.</span>${ar("IN PROGRESS")}</th>
@@ -498,7 +646,7 @@ function render(){
         <th class="n" data-sort="stale"><span class="lg">No update<br>&gt; ${S.staleDays}d</span><span class="sm">No upd. &gt;${S.staleDays}d</span>${ar("stale")}</th>
       </tr></thead>
       <tbody>${gl.map(g => `<tr class="row" data-g="${esc(g.name)}">
-        <td class="nm"><div class="gname">${esc(g.name)} ›</div>${stackBar(g)}</td>
+        <td class="nm"><div class="gname" style="color:${ex.color}">${esc(g.name)} ›</div>${stackBar(g)}</td>
         <td class="n"><b>${g.total}</b></td>
         <td class="n c-done">${g["COMPLETED"]}<small>${pct(g["COMPLETED"], g.total)}%</small></td>
         <td class="n c-prog">${g["IN PROGRESS"]}<small>${pct(g["IN PROGRESS"], g.total)}%</small></td>
@@ -509,83 +657,101 @@ function render(){
   <div class="card">
     <div class="phead">
       <h2>Project details<span class="note">${fmt(list.length)} project${list.length === 1 ? "" : "s"}</span></h2>
-      <button class="btn ${S.showProj ? "" : "primary"}" id="btnToggleProj">${S.showProj ? "Hide project details ▲" : "Show project details ▼"}</button>
+      <button class="btn ${S.showProj ? "" : "primary"}" id="btnToggleProj" style="${S.showProj ? "" : `background:${ex.color};border-color:${ex.color}`}">${S.showProj ? "Hide project details ▲" : "Show project details ▼"}</button>
     </div>
     ${!S.showProj ? "" : list.length ? `
     <div class="tscroll"><table class="ptab">
-      <thead><tr><th class="idx">#</th><th>Project name</th><th class="c-upn">UPN ID</th><th class="c-ro">RO</th><th class="c-piu">PIU</th><th>Current status</th></tr></thead>
-      <tbody>${sorted.slice(0, S.shown).map((p, i) => projRow(p, i)).join("")}</tbody>
+      <thead><tr style="--c:${ex.color}"><th class="idx">#</th><th>Project name</th>${cols.map(([f, l]) => `<th class="c-x">${l}</th>`).join("")}<th>Current status</th></tr></thead>
+      <tbody>${sorted.slice(0, S.shown).map((p, i) => projRow(p, i, cols, ex)).join("")}</tbody>
     </table></div>
     ${list.length > S.shown ? `<button class="btn more" id="btnMore">Show more (${fmt(list.length - S.shown)} left)</button>` : ""}` : `<div class="empty">No projects match these filters.</div>`}
   </div>
-  <div class="foot">Source: ${esc(S.source)} · Latest update in file: ${fdate(latestUpd(S.all))} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
-  bind(sorted);
+  <div class="foot">${esc(exTitle(ex))} · Source: ${esc(d.source)} · Latest update in file: ${fdate(latestUpd(all))} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
+  bind();
 }
-function projRow(p, i){
+function projRow(p, i, cols, ex){
   const s = stInfo(p.status), st = isStale(p);
   return `<tr>
     <td class="idx">${i + 1}</td>
-    <td class="pname">${esc(p.name || "(no name)")}<div class="psub"><span>UPN ${esc(p.upn)}</span><span>${esc(p.ro)}</span><span>PIU ${esc(p.piu)}</span></div></td>
-    <td class="mono c-upn">${esc(p.upn)}</td>
-    <td class="c-ro nw">${esc(p.ro)}</td>
-    <td class="c-piu nw">${esc(p.piu)}</td>
+    <td class="pname" style="color:${ex.color}">${esc(p.name || "(no name)")}<div class="psub">${cols.map(([f, l]) => `<span>${f === "upn" ? l + " " : ""}${esc(f === "upn" ? p.upn : valLabel(l, p[f]))}</span>`).join("")}</div></td>
+    ${cols.map(([f]) => `<td class="c-x ${f === "upn" ? "mono" : "nw"}">${esc(p[f])}</td>`).join("")}
     <td><span class="badge ${s.cls}">${esc(statusText(p))}</span>
       ${p.prog != null && p.status !== "NOT STARTED" ? `<div class="mini"><i style="width:${p.prog}%;background:${s.c}"></i></div>` : ""}
       ${st ? `<div class="stale">No update since ${fdate(p.upd)}</div>` : p.upd ? `<div class="upd">Updated ${fdate(p.upd)}</div>` : ""}</td>
   </tr>`;
 }
-function bind(sorted){
+function renderHome(){
+  const app = $("#app");
+  const rows = EXERCISES.map(ex => ({ ex, d: S.D[ex.id] || {}, c: counts(rowsOf(ex.id)) }));
+  const lu = rows.map(r => latestUpd(rowsOf(r.ex.id))).filter(Boolean).sort((a, b) => b - a)[0];
+  app.innerHTML = `
+  <div class="hero"><b>${EXERCISES.length} ongoing rating exercises</b> across NHAI, NHIDCL and MoRTH. Each card is a separate exercise with its own data. Tap a card to open its dashboard.</div>
+  <div class="excards">${rows.map(({ ex, d, c }) => `
+    <button class="excard" data-go="${ex.id}" style="--c:${ex.color}">
+      <div class="exhead"><span class="orgtag">${ex.org}</span>${d.isLocal ? `<span class="prevtag">Preview</span>` : ""}</div>
+      <div class="exname">${esc(ex.name)}</div>
+      <div class="exorg">${esc(ex.orgFull)}</div>
+      ${d.all ? `
+      <div class="extotal"><b>${fmt(c.total)}</b> projects <span>· by ${ex.levels.map(l => l[1]).join(" → ")}</span></div>
+      ${stackBar(c)}
+      <div class="exstats">
+        ${STATUSES.map(s => `<div><i style="background:${s.c}"></i><b>${fmt(c[s.k] || 0)}</b><small>${s.label} · ${pct(c[s.k] || 0, c.total)}%</small></div>`).join("")}
+      </div>
+      <div class="exfoot"><span class="${c.stale ? "warnt" : ""}">⚠ ${fmt(c.stale)} in progress, no update &gt; ${S.staleDays}d</span><span>Data as of ${fdate(latestUpd(d.all))}</span></div>`
+      : `<div class="exempty">${d.err ? "No data published yet" : "Loading…"}</div>`}
+      <div class="exopen">Open dashboard ›</div>
+    </button>`).join("")}
+  </div>
+  <div class="card">
+    <h2>At a glance<span class="note">each row is a separate exercise</span></h2>
+    <div class="tscroll"><table class="grp cmp">
+      <thead><tr><th>Rating exercise</th><th class="n">Total</th><th class="n">Completed</th><th class="n"><span class="lg">In progress</span><span class="sm">In prog.</span></th><th class="n">Not started</th><th class="n"><span class="lg">No update<br>&gt; ${S.staleDays}d</span><span class="sm">No upd. &gt;${S.staleDays}d</span></th></tr></thead>
+      <tbody>${rows.map(({ ex, d, c }) => `<tr class="row" data-go="${ex.id}">
+        <td class="nm"><div class="gname" style="color:${ex.color}"><span class="orgtag sm" style="--c:${ex.color}">${ex.org}</span> ${esc(ex.name)} ›</div>${d.all ? stackBar(c) : ""}</td>
+        ${d.all ? `<td class="n"><b>${fmt(c.total)}</b></td>
+        <td class="n c-done">${fmt(c["COMPLETED"])}<small>${pct(c["COMPLETED"], c.total)}%</small></td>
+        <td class="n c-prog">${fmt(c["IN PROGRESS"])}<small>${pct(c["IN PROGRESS"], c.total)}%</small></td>
+        <td class="n c-ns">${fmt(c["NOT STARTED"])}<small>${pct(c["NOT STARTED"], c.total)}%</small></td>
+        <td class="n" style="color:${c.stale ? "var(--warn)" : "var(--muted)"};font-weight:700">${fmt(c.stale)}</td>` : `<td class="n" colspan="5" style="color:var(--muted)">No data</td>`}
+      </tr>`).join("")}</tbody>
+    </table></div>
+  </div>
+  <div class="foot">Latest update across exercises: ${fdate(lu)} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
+  document.querySelectorAll("#app [data-go]").forEach(b => b.onclick = () => go(b.dataset.go));
+  bindLogin();
+}
+function bindLogin(){
+  const ll = $("#lnkLogin"); if (ll) ll.onclick = e => { e.preventDefault(); $("#loginMsg").textContent = "Admins can upload and publish new Excel data. Everyone else sees a view-only dashboard."; openModal("#mLogin"); setTimeout(() => $("#loginUser").focus(), 50); };
+}
+function bind(){
   const set = (k, v) => { S.f[k] = v; S.shown = 30; render(); };
-  $("#fRo").onchange = e => { S.f.piu = ""; set("ro", e.target.value); };
-  $("#fPiu").onchange = e => set("piu", e.target.value);
+  $("#fL1").onchange = e => { S.f.l2 = ""; set("l1", e.target.value); };
+  const f2 = $("#fL2"); if (f2) f2.onchange = e => set("l2", e.target.value);
   let tmr; $("#fQ").oninput = e => { clearTimeout(tmr); tmr = setTimeout(() => { const pos = e.target.selectionStart; set("q", e.target.value); const q = $("#fQ"); q.focus(); try { q.setSelectionRange(pos, pos); } catch (_) {} }, 250); };
   document.querySelectorAll("[data-st]").forEach(b => b.onclick = () => set("status", S.f.status === b.dataset.st ? "" : b.dataset.st));
   $("#chStale").onclick = () => set("stale", !S.f.stale);
-  const cl = $("#chClear"); if (cl) cl.onclick = () => { S.f = { ro: "", piu: "", status: "", q: "", stale: false }; S.shown = 30; render(); };
+  const cl = $("#chClear"); if (cl) cl.onclick = () => { S.f = { l1: "", l2: "", status: "", q: "", stale: false }; S.shown = 30; render(); };
   document.querySelectorAll(".kpi").forEach(k => k.onclick = () => {
     const v = k.dataset.k;
     if (v === "stale") set("stale", !S.f.stale); else { S.f.stale = false; set("status", S.f.status === v ? "" : v); }
   });
-  document.querySelectorAll("tr.row").forEach(r => r.onclick = () => { if (S.f.ro) set("piu", r.dataset.g); else { S.f.piu = ""; set("ro", r.dataset.g); } window.scrollTo({ top: 0, behavior: "smooth" }); });
+  document.querySelectorAll("tr.row").forEach(r => r.onclick = () => { if (!S.f.l1) { S.f.l2 = ""; set("l1", r.dataset.g); } else set("l2", r.dataset.g); window.scrollTo({ top: 0, behavior: "smooth" }); });
   document.querySelectorAll("th[data-sort]").forEach(h => h.onclick = () => { const k = h.dataset.sort; if (S.sortKey === k) S.sortDir *= -1; else { S.sortKey = k; S.sortDir = k === "name" ? 1 : -1; } render(); });
   $("#btnToggleProj").onclick = () => { S.showProj = !S.showProj; S.shown = 30; render(); };
-  const ll = $("#lnkLogin"); if (ll) ll.onclick = e => { e.preventDefault(); $("#loginMsg").textContent = "Admins can upload and publish new Excel data. Everyone else sees a view-only dashboard."; openModal("#mLogin"); setTimeout(() => $("#loginUser").focus(), 50); };
   const m = $("#btnMore"); if (m) m.onclick = () => { S.shown += 50; render(); };
-  document.querySelectorAll("[data-share]").forEach(b => b.onclick = () => openShare(projectMsg(sorted[+b.dataset.share])));
+  bindLogin();
 }
+/* ---------- Navigation (#nhai-pd etc. so links open the right exercise) ---------- */
+function go(id){ if ((location.hash.slice(1) || "") === (id || "")) route(); else location.hash = id || ""; }
+function route(){
+  const id = location.hash.slice(1);
+  const nx = exById(id) ? id : null;
+  if (nx !== S.ex) { S.ex = nx; S.f = { l1: "", l2: "", status: "", q: "", stale: false }; S.shown = 30; S.showProj = false; S.sortKey = "total"; S.sortDir = -1; window.scrollTo(0, 0); }
+  render();
+}
+window.addEventListener("hashchange", route);
+$("#btnHome").onclick = () => go("");
 
-/* ---------- WhatsApp ---------- */
-const appUrl = () => location.origin + location.pathname.replace(/index\.html$/, "");
-function summaryMsg(){
-  const list = filtered(), c = counts(list);
-  const scope = [S.f.ro, S.f.piu && "PIU " + S.f.piu, S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.q && `"${S.f.q}"`].filter(Boolean).join(" · ");
-  const L = [];
-  L.push(`*PD Rating Status – ${fdate(new Date(today()))}*`);
-  if (scope) L.push(`_${scope}_`);
-  L.push("");
-  L.push(`Total projects: *${fmt(c.total)}*`);
-  for (const s of STATUSES) L.push(`${s.em} ${s.label}: *${fmt(c[s.k] || 0)}* (${pct(c[s.k] || 0, c.total)}%)`);
-  L.push(`📈 Average progress: ${c.avg}%`);
-  if ($("#optStale").checked) L.push(`⚠️ In progress, no update > ${S.staleDays} days: *${fmt(c.stale)}*`);
-  if ($("#optBreak").checked && !S.f.piu) {
-    const by = S.f.ro ? "piu" : "ro", g = {};
-    for (const p of list) (g[p[by]] ||= []).push(p);
-    const rows = Object.entries(g).map(([n, ps]) => [n, counts(ps)]).sort((a, b) => b[1].total - a[1].total);
-    if (rows.length > 1 || S.f.ro) {
-      L.push(""); L.push(`*By ${by === "ro" ? "RO" : "PIU"}* (Total | ✅ | 🔄 | ⏳${$("#optStale").checked ? " | ⚠️" : ""})`);
-      for (const [n, k] of rows) L.push(`• ${n.replace(/^RO-/, "")}: ${k.total} | ${k["COMPLETED"]} | ${k["IN PROGRESS"]} | ${k["NOT STARTED"]}${$("#optStale").checked ? " | " + k.stale : ""}`);
-    }
-  }
-  L.push(""); L.push(`_Data as of ${fdate(latestUpd(S.all))}_`);
-  if ($("#optLink").checked) L.push(`Dashboard: ${appUrl()}`);
-  return L.join("\n");
-}
-function projectMsg(p){
-  const s = stInfo(p.status);
-  return [`*${p.name}*`, `UPN: ${p.upn}`, `${p.ro} · PIU ${p.piu}`, `${s.em} Status: *${s.label}*`, `📈 Progress: ${p.prog == null ? "–" : p.prog + "%"}`,
-    `🗓 Last updated: ${fdate(p.upd)}${isStale(p) ? ` ⚠️ (no update > ${S.staleDays} days)` : ""}`, "", `Dashboard: ${appUrl()}`].join("\n");
-}
-/* ---------- PDF report (built in, no external libraries) ---------- */
 const HW = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
 const HBW = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
 const pdfSafe = s => String(s == null ? "" : s).replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, "-").replace(/…/g, "...").replace(/[^\x20-\x7E\xA0-\xFF]/g, "?");
@@ -636,125 +802,171 @@ class PDF {
     return new Blob([u8], { type: "application/pdf" });
   }
 }
-const PC = { done: [31, 138, 76], prog: [47, 111, 179], ns: [160, 172, 184], warn: [194, 65, 12], brand: [15, 61, 94], ink: [20, 33, 43], muted: [93, 107, 120], line: [226, 231, 236], white: [255, 255, 255] };
-const pColor = k => k === "COMPLETED" ? PC.done : k === "IN PROGRESS" ? PC.prog : PC.ns;
 
-function buildReport(){
-  const list = filtered(), c = counts(list), pdf = new PDF(), M = 36, W = pdf.W - 2 * M;
-  const extra = [S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.q && `Search "${S.f.q}"`].filter(Boolean).join("  |  ");
-  let y = 0;
-  const header = first => {
+/* ---------- WhatsApp text ---------- */
+const appUrl = () => location.origin + location.pathname.replace(/index\.html$/, "");
+const exUrl = ex => appUrl() + "#" + ex.id;
+function overviewMsg(){
+  const L = [`*Rating Exercises – Status as of ${fdate(new Date(today()))}*`];
+  for (const ex of EXERCISES) {
+    const all = rowsOf(ex.id); L.push("");
+    L.push(`*${ex.org} – ${ex.name}*`);
+    if (!all.length) { L.push("No data published yet"); continue; }
+    const c = counts(all);
+    L.push(`Total: *${fmt(c.total)}* | ✅ ${fmt(c["COMPLETED"])} (${pct(c["COMPLETED"], c.total)}%) | 🔄 ${fmt(c["IN PROGRESS"])} (${pct(c["IN PROGRESS"], c.total)}%) | ⏳ ${fmt(c["NOT STARTED"])} (${pct(c["NOT STARTED"], c.total)}%)`);
+    if ($("#optStale").checked) L.push(`⚠️ In progress, no update > ${S.staleDays} days: ${fmt(c.stale)}`);
+    L.push(`_Data as of ${fdate(latestUpd(all))}_`);
+  }
+  if ($("#optLink").checked) { L.push(""); L.push(`Dashboard: ${appUrl()}`); }
+  return L.join("\n");
+}
+function summaryMsg(){
+  if (!S.ex) return overviewMsg();
+  const ex = EX(), list = filtered(), c = counts(list);
+  const scope = [scopeLabel(), S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.q && `"${S.f.q}"`].filter(Boolean).join(" · ");
+  const L = [`*${ex.org} – ${ex.name}*`, `*Status as of ${fdate(new Date(today()))}*`, `_${scope}_`, ""];
+  L.push(`Total projects: *${fmt(c.total)}*`);
+  for (const s of STATUSES) L.push(`${s.em} ${s.label}: *${fmt(c[s.k] || 0)}* (${pct(c[s.k] || 0, c.total)}%)`);
+  L.push(`📈 Average progress: ${c.avg}%`);
+  if ($("#optStale").checked) L.push(`⚠️ In progress, no update > ${S.staleDays} days: *${fmt(c.stale)}*`);
+  const G = groupLevel();
+  if ($("#optBreak").checked && G) {
+    const rows = groupRows(list, G[0]).sort((a, b) => b.total - a.total);
+    L.push(""); L.push(`*By ${G[1]}* (Total | ✅ | 🔄 | ⏳${$("#optStale").checked ? " | ⚠️" : ""})`);
+    for (const k of rows) L.push(`• ${k.name}: ${k.total} | ${k["COMPLETED"]} | ${k["IN PROGRESS"]} | ${k["NOT STARTED"]}${$("#optStale").checked ? " | " + k.stale : ""}`);
+  }
+  L.push(""); L.push(`_Data as of ${fdate(latestUpd(rowsOf(ex.id)))}_`);
+  if ($("#optLink").checked) L.push(`Dashboard: ${exUrl(ex)}`);
+  return L.join("\n");
+}
+
+/* ---------- PDF reports ---------- */
+const PC = { done: [31, 138, 76], prog: [47, 111, 179], ns: [160, 172, 184], warn: [194, 65, 12], ink: [20, 33, 43], muted: [93, 107, 120], line: [226, 231, 236], white: [255, 255, 255] };
+const pColor = k => k === "COMPLETED" ? PC.done : k === "IN PROGRESS" ? PC.prog : PC.ns;
+function pdfKit(title, sub, brand){
+  const pdf = new PDF(), M = 36, W = pdf.W - 2 * M, K = { pdf, M, W, y: 0 };
+  K.header = first => {
     if (first) {
-      pdf.rect(0, 0, pdf.W, 84, PC.brand);
-      pdf.text(M, 34, "PD Rating Status Report", 20, true, PC.white);
-      pdf.text(M, 55, scopeLabel() + (extra ? "  |  " + extra : ""), 11, true, [214, 228, 240]);
-      pdf.text(M, 71, `Generated ${fdate(new Date(today()))}   |   Data as of ${fdate(latestUpd(S.all))}`, 9, false, [182, 204, 224]);
-      y = 104;
-    } else {
-      pdf.rect(0, 0, pdf.W, 36, PC.brand);
-      pdf.text(M, 23, "PD Rating Status Report  |  " + scopeLabel(), 10, true, PC.white);
-      y = 54;
-    }
+      pdf.rect(0, 0, pdf.W, 84, brand);
+      pdf.text(M, 33, title, 19, true, PC.white);
+      pdf.text(M, 54, sub, 11, true, [222, 232, 240]);
+      pdf.text(M, 71, `Generated ${fdate(new Date(today()))}`, 9, false, [200, 214, 226]);
+      K.y = 104;
+    } else { pdf.rect(0, 0, pdf.W, 36, brand); pdf.text(M, 23, title + "  |  " + sub, 10, true, PC.white); K.y = 54; }
   };
-  const ensure = (h, onNew) => { if (y + h > pdf.H - 44) { pdf.add(); header(false); if (onNew) onNew(); } };
-  const bar = (x, yy, w, h, g) => {
-    pdf.rect(x, yy, w, h, [238, 241, 244]);
-    let cx = x;
+  K.ensure = (h, onNew) => { if (K.y + h > pdf.H - 44) { pdf.add(); K.header(false); if (onNew) onNew(); } };
+  K.bar = (x, yy, w, h, g) => {
+    pdf.rect(x, yy, w, h, [238, 241, 244]); let cx = x;
     for (const k of ["COMPLETED", "IN PROGRESS", "NOT STARTED"]) { const sw = g.total ? w * (g[k] || 0) / g.total : 0; if (sw > 0) { pdf.rect(cx, yy, sw, h, pColor(k)); cx += sw; } }
   };
-  const section = t => { ensure(40); pdf.text(M, y + 12, t, 12.5, true, PC.ink); pdf.line(M, y + 18, M + W, y + 18, PC.line, 0.8); y += 28; };
-  const table = (cols, rows) => {
+  K.section = (t, color) => { K.ensure(40); pdf.text(M, K.y + 12, t, 12.5, true, color || PC.ink); pdf.line(M, K.y + 18, M + W, K.y + 18, PC.line, 0.8); K.y += 28; };
+  K.kpis = (c, color) => {
+    const kp = [["TOTAL PROJECTS", fmt(c.total), `Avg. progress ${c.avg}%`, color], ["COMPLETED", fmt(c["COMPLETED"]), `${pct(c["COMPLETED"], c.total)}% of total`, PC.done],
+      ["IN PROGRESS", fmt(c["IN PROGRESS"]), `${pct(c["IN PROGRESS"], c.total)}% of total`, PC.prog], ["NOT STARTED", fmt(c["NOT STARTED"]), `${pct(c["NOT STARTED"], c.total)}% of total`, PC.muted],
+      [`NO UPDATE > ${S.staleDays} DAYS`, fmt(c.stale), "In-progress projects", PC.warn]];
+    const gap = 8, bw = (W - gap * 4) / 5;
+    K.ensure(70);
+    kp.forEach((k, i) => { const x = M + i * (bw + gap); pdf.rect(x, K.y, bw, 60, [250, 251, 252], PC.line); pdf.rect(x, K.y, 3.5, 60, k[3]);
+      pdf.text(x + 10, K.y + 15, k[0], 6.8, true, PC.muted); pdf.text(x + 10, K.y + 38, k[1], 19, true, k[3]); pdf.text(x + 10, K.y + 52, k[2], 7.5, false, PC.muted); });
+    K.y += 74;
+  };
+  K.overall = c => {
+    K.ensure(40); K.bar(M, K.y, W, 14, c); K.y += 26; let lx = M;
+    for (const s of STATUSES) { const t = `${s.label}: ${fmt(c[s.k] || 0)} (${pct(c[s.k] || 0, c.total)}%)`; pdf.rect(lx, K.y - 7, 8, 8, pColor(s.k)); pdf.text(lx + 12, K.y, t, 9, false, PC.ink); lx += 24 + pdf.tw(t, 9, false); }
+    K.y += 22;
+  };
+  K.table = (cols, rows, head) => {
     const drawHead = () => {
       const lines = cols.map(cl => pdf.wrap(cl.h, 7.8, true, cl.w - 8));
       const hh = Math.max(...lines.map(l => l.length)) * 9.5 + 9;
-      pdf.rect(M, y, W, hh, PC.brand);
-      let x = M;
-      cols.forEach((cl, i) => { lines[i].forEach((ln, j) => pdf.text(cl.al === "r" ? x + cl.w - 5 : x + 5, y + 12 + j * 9.5, ln, 7.8, true, PC.white, cl.al === "r" ? "right" : "left")); x += cl.w; });
-      y += hh;
+      pdf.rect(M, K.y, W, hh, head); let x = M;
+      cols.forEach((cl, i) => { lines[i].forEach((ln, j) => pdf.text(cl.al === "r" ? x + cl.w - 5 : x + 5, K.y + 12 + j * 9.5, ln, 7.8, true, PC.white, cl.al === "r" ? "right" : "left")); x += cl.w; });
+      K.y += hh;
     };
-    ensure(70); drawHead();
+    K.ensure(70); drawHead();
     rows.forEach((r, ri) => {
       const cl = r.map((cell, i) => cell.bar ? [""] : pdf.wrap(cell.t, cell.size || 8.5, !!cell.bold, cols[i].w - 10));
       const nl = Math.max(...cl.map((l, i) => l.length + (r[i].sub ? 1 : 0)));
       const rh = nl * 11 + 9;
-      ensure(rh, drawHead);
-      if (r.hl) pdf.rect(M, y, W, rh, r.hl); else if (ri % 2) pdf.rect(M, y, W, rh, [247, 249, 251]);
+      K.ensure(rh, drawHead);
+      if (ri % 2) pdf.rect(M, K.y, W, rh, [247, 249, 251]);
       let x = M;
       r.forEach((cell, i) => {
         const co = cols[i];
-        if (cell.bar) bar(x + 5, y + rh / 2 - 4, co.w - 10, 8, cell.bar);
+        if (cell.bar) K.bar(x + 5, K.y + rh / 2 - 4, co.w - 10, 8, cell.bar);
         else {
-          cl[i].forEach((ln, j) => pdf.text(co.al === "r" ? x + co.w - 5 : x + 5, y + 14 + j * 11, ln, cell.size || 8.5, !!cell.bold, cell.color || PC.ink, co.al === "r" ? "right" : "left"));
-          if (cell.sub) pdf.text(co.al === "r" ? x + co.w - 5 : x + 5, y + 14 + cl[i].length * 11, cell.sub, 7.2, false, cell.subColor || PC.muted, co.al === "r" ? "right" : "left");
+          cl[i].forEach((ln, j) => pdf.text(co.al === "r" ? x + co.w - 5 : x + 5, K.y + 14 + j * 11, ln, cell.size || 8.5, !!cell.bold, cell.color || PC.ink, co.al === "r" ? "right" : "left"));
+          if (cell.sub) pdf.text(co.al === "r" ? x + co.w - 5 : x + 5, K.y + 14 + cl[i].length * 11, cell.sub, 7.2, false, cell.subColor || PC.muted, co.al === "r" ? "right" : "left");
         }
         x += co.w;
       });
-      pdf.line(M, y + rh, M + W, y + rh, PC.line);
-      y += rh;
+      pdf.line(M, K.y + rh, M + W, K.y + rh, PC.line); K.y += rh;
     });
-    y += 16;
+    K.y += 16;
   };
-
-  header(true);
-  // KPI boxes
-  const kp = [
-    ["TOTAL PROJECTS", fmt(c.total), `Avg. progress ${c.avg}%`, PC.brand],
-    ["COMPLETED", fmt(c["COMPLETED"]), `${pct(c["COMPLETED"], c.total)}% of total`, PC.done],
-    ["IN PROGRESS", fmt(c["IN PROGRESS"]), `${pct(c["IN PROGRESS"], c.total)}% of total`, PC.prog],
-    ["NOT STARTED", fmt(c["NOT STARTED"]), `${pct(c["NOT STARTED"], c.total)}% of total`, PC.muted],
-    [`NO UPDATE > ${S.staleDays} DAYS`, fmt(c.stale), "In-progress projects", PC.warn]
-  ];
-  const gap = 8, bw = (W - gap * 4) / 5;
-  kp.forEach((k, i) => {
-    const x = M + i * (bw + gap);
-    pdf.rect(x, y, bw, 60, [250, 251, 252], PC.line); pdf.rect(x, y, 3.5, 60, k[3]);
-    pdf.text(x + 10, y + 15, k[0], 6.8, true, PC.muted);
-    pdf.text(x + 10, y + 38, k[1], 19, true, k[3]);
-    pdf.text(x + 10, y + 52, k[2], 7.5, false, PC.muted);
-  });
-  y += 78;
-  // overall bar
-  section("Overall status");
-  bar(M, y, W, 14, c); y += 26;
-  let lx = M;
-  for (const s of STATUSES) {
-    const t = `${s.label}: ${fmt(c[s.k] || 0)} (${pct(c[s.k] || 0, c.total)}%)`;
-    pdf.rect(lx, y - 7, 8, 8, pColor(s.k)); pdf.text(lx + 12, y, t, 9, false, PC.ink); lx += 24 + pdf.tw(t, 9, false);
+  K.statusCols = (c, color) => [
+    { t: fmt(c["COMPLETED"]), color: PC.done, bold: true, sub: pct(c["COMPLETED"], c.total) + "%" },
+    { t: fmt(c["IN PROGRESS"]), color: PC.prog, bold: true, sub: pct(c["IN PROGRESS"], c.total) + "%" },
+    { t: fmt(c["NOT STARTED"]), color: PC.muted, bold: true, sub: pct(c["NOT STARTED"], c.total) + "%" },
+    { t: fmt(c.stale), color: c.stale ? PC.warn : PC.muted, bold: !!c.stale }];
+  K.finish = name => {
+    const n = pdf.pages.length;
+    pdf.pages.forEach((ops, i) => { pdf.ops = ops; pdf.line(M, pdf.H - 30, M + W, pdf.H - 30, PC.line);
+      pdf.text(M, pdf.H - 18, "Rating Exercises Dashboard  |  " + appUrl(), 7.5, false, PC.muted); pdf.text(M + W, pdf.H - 18, `Page ${i + 1} of ${n}`, 7.5, false, PC.muted, "right"); });
+    return new File([pdf.blob()], name.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/_+/g, "_") + "_" + new Date().toISOString().slice(0, 10) + ".pdf", { type: "application/pdf" });
+  };
+  return K;
+}
+function buildOverviewReport(){
+  const K = pdfKit("Rating Exercises - Status Report", "NHAI  |  NHIDCL  |  MoRTH", [20, 33, 43]);
+  K.header(true);
+  K.section("At a glance - each row is a separate rating exercise");
+  const cols = [{ h: "Organisation", w: 70 }, { h: "Rating exercise", w: 130 }, { h: "Status", w: 80 }, { h: "Total", w: 42, al: "r" }, { h: "Completed", w: 52, al: "r" }, { h: "In progress", w: 52, al: "r" }, { h: "Not started", w: 52, al: "r" }, { h: `No update > ${S.staleDays} days`, w: K.W - 478, al: "r" }];
+  K.table(cols, EXERCISES.filter(ex => rowsOf(ex.id).length).map(ex => { const c = counts(rowsOf(ex.id));
+    return [{ t: ex.org, bold: true, color: ex.rgb }, { t: ex.name, bold: true, sub: `Data as of ${fdate(latestUpd(rowsOf(ex.id)))}` }, { bar: c }, { t: fmt(c.total), bold: true }, ...K.statusCols(c)]; }), [20, 33, 43]);
+  for (const ex of EXERCISES) {
+    const all = rowsOf(ex.id); if (!all.length) continue;
+    const c = counts(all);
+    K.ensure(150);
+    K.pdf.rect(K.M, K.y, 4, 16, ex.rgb);
+    K.pdf.text(K.M + 10, K.y + 12, `${ex.org} - ${ex.name}`, 12.5, true, ex.rgb);
+    K.pdf.text(K.M + K.W, K.y + 12, `Data as of ${fdate(latestUpd(all))}`, 8, false, PC.muted, "right");
+    K.y += 26;
+    K.kpis(c, ex.rgb); K.overall(c); K.y += 6;
   }
-  y += 24;
-
-  if (!S.f.piu) {
-    const by = S.f.ro ? "piu" : "ro", lab = by === "ro" ? "RO" : "PIU";
-    const gl = groupRows(list, by).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
-    section(`Status by ${lab}${S.f.ro ? "  -  " + S.f.ro : ""}`);
-    const cols = [{ h: "#", w: 22 }, { h: `${lab} name`, w: 140 }, { h: "Status", w: 92 }, { h: "Total", w: 42, al: "r" }, { h: "Completed", w: 58, al: "r" }, { h: "In progress", w: 58, al: "r" }, { h: "Not started", w: 58, al: "r" }, { h: `No update > ${S.staleDays} days`, w: W - 470, al: "r" }];
-    table(cols, gl.map((g, i) => [
-      { t: String(i + 1), color: PC.muted }, { t: g.name, bold: true }, { bar: g }, { t: fmt(g.total), bold: true },
-      { t: fmt(g["COMPLETED"]), color: PC.done, bold: true, sub: pct(g["COMPLETED"], g.total) + "%" },
-      { t: fmt(g["IN PROGRESS"]), color: PC.prog, bold: true, sub: pct(g["IN PROGRESS"], g.total) + "%" },
-      { t: fmt(g["NOT STARTED"]), color: PC.muted, bold: true, sub: pct(g["NOT STARTED"], g.total) + "%" },
-      { t: fmt(g.stale), color: g.stale ? PC.warn : PC.muted, bold: !!g.stale }
-    ]));
-    ensure(20); pdf.text(M, y, "Project-wise details are included when a PIU is selected in the dashboard filters.", 8, false, PC.muted); y += 14;
+  return K.finish("Rating_Exercises_Overview");
+}
+function buildReport(){
+  if (!S.ex) return buildOverviewReport();
+  const ex = EX(), list = filtered(), c = counts(list);
+  const extra = [S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.q && `Search "${S.f.q}"`].filter(Boolean).join("  |  ");
+  const K = pdfKit(`${ex.org} - ${ex.name}`, `Status Report  |  ${scopeLabel()}${extra ? "  |  " + extra : ""}  |  Data as of ${fdate(latestUpd(rowsOf(ex.id)))}`, ex.rgb);
+  K.header(true);
+  K.kpis(c, ex.rgb);
+  K.section("Overall status"); K.overall(c); K.y += 4;
+  const G = groupLevel();
+  if (!atLowestLevel()) {
+    if (G) {
+      const gl = groupRows(list, G[0]).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+      K.section(`Status by ${G[1]}${S.f.l1 ? "  -  " + S.f.l1 : ""}`);
+      const cols = [{ h: "#", w: 22 }, { h: `${G[1]} name`, w: 140 }, { h: "Status", w: 92 }, { h: "Total", w: 42, al: "r" }, { h: "Completed", w: 58, al: "r" }, { h: "In progress", w: 58, al: "r" }, { h: "Not started", w: 58, al: "r" }, { h: `No update > ${S.staleDays} days`, w: K.W - 470, al: "r" }];
+      K.table(cols, gl.map((g, i) => [{ t: String(i + 1), color: PC.muted }, { t: g.name, bold: true }, { bar: g }, { t: fmt(g.total), bold: true }, ...K.statusCols(g)]), ex.rgb);
+    }
+    const low = (lv(1) || lv(0))[1];
+    K.ensure(20); K.pdf.text(K.M, K.y, `Project-wise details are included when a ${low} is selected in the dashboard filters.`, 8, false, PC.muted); K.y += 14;
   } else {
-    section(`Project details  -  PIU ${S.f.piu}`);
-    const cols = [{ h: "#", w: 22 }, { h: "Project name", w: 190 }, { h: "UPN ID", w: 92 }, { h: "RO", w: 66 }, { h: "PIU", w: 55 }, { h: "Current status", w: W - 425 }];
-    table(cols, sortProjects(list).map((p, i) => {
+    K.section(`Project details  -  ${scopeLabel()}`);
+    const lvls = ex.levels;
+    const cols = lvls.length === 2
+      ? [{ h: "#", w: 22 }, { h: "Project name", w: 190 }, { h: ex.idLabel, w: 92 }, { h: lvls[0][1], w: 66 }, { h: lvls[1][1], w: 55 }, { h: "Current status", w: K.W - 425 }]
+      : [{ h: "#", w: 22 }, { h: "Project name", w: 215 }, { h: ex.idLabel, w: 100 }, { h: lvls[0][1], w: 88 }, { h: "Current status", w: K.W - 425 }];
+    K.table(cols, sortProjects(list).map((p, i) => {
       const st = isStale(p);
-      return [{ t: String(i + 1), color: PC.muted }, { t: p.name, bold: true, color: PC.brand }, { t: p.upn, size: 8 }, { t: p.ro, size: 8 }, { t: p.piu, size: 8 },
+      return [{ t: String(i + 1), color: PC.muted }, { t: p.name, bold: true, color: ex.rgb }, { t: p.upn, size: 8 }, ...lvls.map(([f]) => ({ t: p[f], size: 8 })),
         { t: statusText(p).replace(" · ", " - "), bold: true, color: p.status === "NOT STARTED" ? PC.muted : pColor(p.status), sub: st ? `No update since ${fdate(p.upd).replace(/ \d{4}$/, "")}` : (p.upd ? `Updated ${fdate(p.upd)}` : ""), subColor: st ? PC.warn : PC.muted }];
-    }));
+    }), ex.rgb);
   }
-  // footers
-  const n = pdf.pages.length;
-  pdf.pages.forEach((ops, i) => {
-    pdf.ops = ops;
-    pdf.line(M, pdf.H - 30, M + W, pdf.H - 30, PC.line);
-    pdf.text(M, pdf.H - 18, "PD Rating Status  |  " + appUrl(), 7.5, false, PC.muted);
-    pdf.text(M + W, pdf.H - 18, `Page ${i + 1} of ${n}`, 7.5, false, PC.muted, "right");
-  });
-  const name = `PD_Status_${scopeLabel().replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "")}_${new Date().toISOString().slice(0, 10)}.pdf`;
-  return new File([pdf.blob()], name, { type: "application/pdf" });
+  return K.finish(`${ex.org}_${ex.name}_${scopeLabel()}`);
 }
 function downloadFile(f){
   const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name;
@@ -763,34 +975,34 @@ function downloadFile(f){
 async function sharePdf(){
   const f = buildReport();
   if (navigator.canShare && navigator.canShare({ files: [f] })) {
-    try { await navigator.share({ files: [f], title: f.name, text: `PD Rating Status - ${scopeLabel()}` }); return; }
+    try { await navigator.share({ files: [f], title: f.name, text: S.ex ? `${exTitle(EX())} – ${scopeLabel()}` : "Rating exercises – status" }); return; }
     catch (e) { if (e.name === "AbortError") return; }
   }
   downloadFile(f);
   toast("PDF downloaded. In WhatsApp tap 📎 Attach → Document and pick it.", 5000);
 }
 
-let shareMode = "summary";
-function openShare(text){
-  shareMode = text ? "project" : "summary";
-  $("#shareMenu").style.display = text ? "none" : "";
-  $("#shareTitle").textContent = text ? "Share project on WhatsApp" : "Share on WhatsApp";
-  $("#shareScope").innerHTML = `Report for: <b>${esc(scopeLabel())}</b>${S.f.piu ? " · PDF includes project details" : ""}`;
-  $("#msgBox").hidden = !text;
-  if (text) $("#shareText").value = text;
+/* ---------- Share menu ---------- */
+function openShare(){
+  const ex = EX();
+  $("#shareTitle").textContent = "Share on WhatsApp";
+  $("#shareScope").innerHTML = ex ? `Report for: <b>${esc(exTitle(ex))}</b> › <b>${esc(scopeLabel())}</b>` : `Report for: <b>all ${EXERCISES.length} rating exercises</b> (overview)`;
+  $("#pdfHint").textContent = ex ? `The PDF covers the current filters. Project-wise details are included only when a ${(lv(1) || lv(0))[1]} is selected.` : "The overview PDF summarises all rating exercises. Open an exercise for its detailed report.";
+  $("#optBreakWrap").style.display = ex ? "" : "none";
+  $("#msgBox").hidden = true;
   openModal("#mShare");
 }
 $("#optMsg").onclick = () => { $("#msgBox").hidden = false; $("#shareText").value = summaryMsg(); $("#msgBox").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
 $("#optPdfShare").onclick = () => sharePdf();
 $("#optPdfDl").onclick = () => { downloadFile(buildReport()); toast("PDF downloaded"); };
-["#optBreak", "#optStale", "#optLink"].forEach(id => $(id).onchange = () => { if (shareMode === "summary") $("#shareText").value = summaryMsg(); });
+["#optBreak", "#optStale", "#optLink"].forEach(id => $(id).onchange = () => { $("#shareText").value = summaryMsg(); });
 $("#btnWa").onclick = () => { window.open("https://wa.me/?text=" + encodeURIComponent($("#shareText").value), "_blank"); };
 $("#btnCopy").onclick = async () => {
   try { await navigator.clipboard.writeText($("#shareText").value); toast("Copied. Paste it into WhatsApp."); }
   catch (e) { $("#shareText").select(); document.execCommand("copy"); toast("Copied."); }
 };
-$("#fab").onclick = () => { if (S.all.length) openShare(); };
-const bp = $("#btnPdf"); if (bp) bp.onclick = () => { if (S.all.length) { downloadFile(buildReport()); toast("PDF downloaded"); } };
+$("#fab").onclick = () => openShare();
+$("#btnPdf").onclick = () => { downloadFile(buildReport()); toast("PDF downloaded"); };
 
 /* ---------- Modals, toast ---------- */
 function openModal(id){ $(id).classList.add("on"); }
@@ -814,85 +1026,117 @@ $("#btnSettings").onclick = () => {
 $("#btnSaveSet").onclick = () => {
   const d = parseInt($("#setStale").value, 10); if (d > 0) { S.staleDays = d; LS.set("staleDays", d); }
   LS.set("token", $("#setToken").value.trim()); LS.set("repo", $("#setRepo").value.trim());
-  $("#mSettings").classList.remove("on"); render(); banner(); toast("Settings saved");
+  $("#mSettings").classList.remove("on"); render(); toast("Settings saved");
 };
 function b64(buf){
   const u8 = new Uint8Array(buf); let s = "";
   for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
   return btoa(s);
 }
-async function publish(){
-  const token = LS.get("token", ""), repo = LS.get("repo", "") || defaultRepo();
+async function publish(ex){
+  const d = S.D[ex.id], token = LS.get("token", ""), repo = LS.get("repo", "") || defaultRepo();
   if (!token || !repo) { toast("Add your GitHub token in Settings first."); $("#btnSettings").click(); return; }
   const btn = $("#btnPub"); if (btn) { btn.disabled = true; btn.textContent = "Publishing…"; }
-  const api = `https://api.github.com/repos/${repo}/contents/${DATA_FILE}`;
+  const api = `https://api.github.com/repos/${repo}/contents/${ex.file}`;
   const H = { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" };
   try {
     let sha;
     const g = await fetch(api + "?ref=main&t=" + Date.now(), { headers: H, cache: "no-store" });
     if (g.ok) sha = (await g.json()).sha; else if (g.status !== 404) throw new Error(`GitHub said ${g.status} while checking the current file. Check the token and repository name.`);
     const r = await fetch(api, { method: "PUT", headers: H, body: JSON.stringify({
-      message: `Update status data (${S.localFile})`, content: b64(S.localBuf), branch: "main", ...(sha ? { sha } : {}) }) });
+      message: `Update ${ex.org} ${ex.name} data (${d.localFile})`, content: b64(d.localBuf), branch: "main", ...(sha ? { sha } : {}) }) });
     if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`GitHub said ${r.status}: ${j.message || "unknown error"}`); }
-    S.isLocal = false; S.source = `${S.localFile} (published)`;
-    banner("ok", "Published. Everyone opening the link will see this data within 1–2 minutes.");
-    render();
-  } catch (e) {
-    banner("err", "Publishing failed: " + e.message);
-  }
+    d.isLocal = false; d.pub = d.all; d.source = `${d.localFile} (published)`;
+    render(); banner("ok", `Published ${exTitle(ex)}. Everyone opening the link will see this data within 1–2 minutes.`);
+  } catch (e) { render(); banner("err", "Publishing failed: " + e.message); }
 }
+
+/* ---------- Upload (admin) ---------- */
+let upSel = null;
+function openUpload(pre){
+  upSel = pre || S.ex || null;
+  $("#upMsg").innerHTML = "";
+  drawUpEx(); openModal("#mUpload");
+}
+function drawUpEx(){
+  $("#upEx").innerHTML = EXERCISES.map(e => `<button class="upopt ${upSel === e.id ? "on" : ""}" data-ue="${e.id}" style="--c:${e.color}"><span class="orgtag">${e.org}</span><b>${esc(e.name)}</b><small>${e.idLabel} · ${e.levels.map(l => l[1]).join(" → ")}</small></button>`).join("");
+  document.querySelectorAll("[data-ue]").forEach(b => b.onclick = () => { upSel = b.dataset.ue; $("#upMsg").innerHTML = ""; drawUpEx(); });
+}
+$("#btnUpload").onclick = () => openUpload();
+$("#upPick").onclick = () => { if (!upSel) { $("#upMsg").innerHTML = `<div class="banner err">First choose which rating exercise this file is for.</div>`; return; } $("#file").click(); };
+function loadPreview(ex, projects, fname, buf){
+  const d = S.D[ex.id] ||= {};
+  Object.assign(d, { all: projects, isLocal: true, localFile: fname, localBuf: buf, source: fname + " (preview)", err: null });
+  $("#mUpload").classList.remove("on");
+  toast(`Loaded ${fmt(projects.length)} projects into ${exTitle(ex)}`);
+  if (S.ex === ex.id) render(); else go(ex.id);
+}
+$("#file").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f || !upSel) return;
+  const ex = exById(upSel), msg = $("#upMsg");
+  try {
+    const buf = await f.arrayBuffer();
+    const projects = toProjects(await readXlsx(buf));
+    const warns = [];
+    const fe = fitError(ex, projects); if (fe) warns.push(fe);
+    const g = guessEx(f.name); if (g && g !== ex.id) warns.push(`The file name "${f.name}" suggests ${exTitle(exById(g))}.`);
+    const ov = bestOverlap(projects); if (ov && ov.id !== ex.id && ov.r >= 0.3) warns.push(`${Math.round(ov.r * 100)}% of its projects match the published ${exTitle(exById(ov.id))} data.`);
+    if (!warns.length) return loadPreview(ex, projects, f.name, buf);
+    const alt = (g && g !== ex.id) ? exById(g) : (ov && ov.id !== ex.id && ov.r >= 0.3) ? exById(ov.id) : null;
+    msg.innerHTML = `<div class="banner err" style="display:block"><b>Check this file:</b> you chose <b>${esc(exTitle(ex))}</b>, but<ul>${warns.map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <div class="row">${alt ? `<button class="btn primary" id="upAlt">Load into ${esc(exTitle(alt))}</button>` : ""}${fe ? "" : `<button class="btn" id="upForce">Load into ${esc(exTitle(ex))} anyway</button>`}</div></div>`;
+    if (alt) $("#upAlt").onclick = () => { const fe2 = fitError(alt, projects); if (fe2) { toast(fe2, 5000); return; } upSel = alt.id; loadPreview(alt, projects, f.name, buf); };
+    const uf = $("#upForce"); if (uf) uf.onclick = () => loadPreview(ex, projects, f.name, buf);
+  } catch (err) { msg.innerHTML = `<div class="banner err">Could not read that file: ${esc(err.message)}</div>`; }
+};
 
 /* ---------- Banner ---------- */
 function banner(kind, msg){
   const b = $("#banner");
   if (kind) { b.innerHTML = `<div class="banner ${kind}"><div class="grow">${esc(msg)}</div><button class="btn" id="bx">OK</button></div>`; $("#bx").onclick = () => banner(); return; }
-  if (S.isLocal) {
+  const ex = EX(), d = ex && S.D[ex.id];
+  if (d && d.isLocal) {
     const canPub = !!LS.get("token", "");
-    b.innerHTML = `<div class="banner local"><div class="grow"><b>Preview of ${esc(S.localFile)}</b> on this device only. Others still see the published data.</div>
+    b.innerHTML = `<div class="banner local"><div class="grow"><b>Preview of ${esc(d.localFile)}</b> for <b>${esc(exTitle(ex))}</b>, on this device only. Others still see the published data.</div>
       <button class="btn" id="bRevert">Back to published</button>
       <button class="btn primary" id="btnPub">${canPub ? "Publish for everyone" : "How to publish"}</button></div>`;
-    $("#bRevert").onclick = () => loadPublished();
-    $("#btnPub").onclick = () => canPub ? publish() : banner("ok", "To publish from this app: open Settings and paste a GitHub access token (see the README in the GitHub repository). Or upload the file on GitHub, named status.xlsx.");
+    $("#bRevert").onclick = () => { if (d.pub) { Object.assign(d, { all: d.pub, isLocal: false, source: ex.file }); } else { Object.assign(d, { all: null, isLocal: false, err: "none" }); } render(); };
+    $("#btnPub").onclick = () => canPub ? publish(ex) : banner("ok", `To publish from this app: open Settings and paste a GitHub access token (see the README). Or upload the file on GitHub, renamed to ${ex.file}.`);
+  } else if (!ex && EXERCISES.some(e => S.D[e.id] && S.D[e.id].isLocal)) {
+    b.innerHTML = `<div class="banner local"><div class="grow">Some exercises show an unpublished <b>Preview</b>. Open them to publish or go back.</div></div>`;
   } else b.innerHTML = "";
 }
 
 /* ---------- Loading ---------- */
-function setData(projects, source){
-  S.all = projects; S.source = source; S.shown = 30;
-  const lu = latestUpd(projects);
-  $("#asof").textContent = `${fmt(projects.length)} projects · data as of ${fdate(lu)}`;
-  if (S.f.ro && !projects.some(p => p.ro === S.f.ro)) S.f.ro = "";
-  if (S.f.piu && !projects.some(p => p.piu === S.f.piu)) S.f.piu = "";
-  render(); banner();
-}
-async function loadPublished(){
-  S.isLocal = false;
+async function loadOne(ex){
+  const d = S.D[ex.id] ||= {};
   try {
-    const r = await fetch(DATA_FILE + "?t=" + Date.now(), { cache: "no-store" });
+    const r = await fetch(ex.file + "?t=" + Date.now(), { cache: "no-store" });
     if (!r.ok) throw new Error("HTTP " + r.status);
-    const buf = await r.arrayBuffer();
-    setData(toProjects(await readXlsx(buf)), DATA_FILE);
+    const rows = toProjects(await readXlsx(await r.arrayBuffer()));
+    Object.assign(d, { all: rows, pub: rows, source: ex.file, err: null });
   } catch (e) {
     try {
-      const c = await caches.match(DATA_FILE, { ignoreSearch: true });
-      if (c) { setData(toProjects(await readXlsx(await c.arrayBuffer())), DATA_FILE + " (offline copy)"); toast("Offline: showing last saved data"); return; }
+      const c = await caches.match(ex.file, { ignoreSearch: true });
+      if (c) { const rows = toProjects(await readXlsx(await c.arrayBuffer())); Object.assign(d, { all: rows, pub: rows, source: ex.file + " (offline copy)", err: null }); return; }
     } catch (_) {}
-    $("#app").innerHTML = `<div class="empty">No published data yet (${esc(e.message)}).${$("#file") ? `<br><br><button class="btn primary" onclick="document.getElementById('file').click()">Upload Excel file</button>` : ""}</div>`;
-    $("#asof").textContent = "No data loaded";
+    d.err = e.message;
   }
 }
-$("#btnUpload").onclick = () => $("#file").click();
-$("#file").onchange = async e => {
-  const f = e.target.files[0]; e.target.value = "";
-  if (!f) return;
+async function loadAll(){
+  route();
+  await Promise.all(EXERCISES.map(ex => loadOne(ex).then(() => { if (!S.ex || S.ex === ex.id) render(); })));
+  render();
+}
+/* pick up a newer app version right away instead of waiting for the browser cache */
+async function checkVersion(){
   try {
-    const buf = await f.arrayBuffer();
-    const projects = toProjects(await readXlsx(buf));
-    S.isLocal = true; S.localFile = f.name; S.localBuf = buf;
-    setData(projects, f.name + " (preview)");
-    toast(`Loaded ${fmt(projects.length)} projects from ${f.name}`);
-  } catch (err) { banner("err", "Could not read that file: " + err.message); }
-};
+    const t = await fetch("index.html?v=" + Date.now(), { cache: "no-store" }).then(r => r.text());
+    const m = t.match(/APP_VERSION = "([^"]+)"/);
+    if (m && m[1] !== APP_VERSION && sessionStorage.getItem("pd_reloaded") !== m[1]) { sessionStorage.setItem("pd_reloaded", m[1]); location.reload(); }
+  } catch (_) {}
+}
 
 /* ---------- Admin login (view-only for everyone else) ----------
    Only a salted PBKDF2 hash of the password is stored here, never the password itself.
@@ -905,9 +1149,8 @@ async function pbkdf2(pw, saltB64, iter){
   return btoa(String.fromCharCode(...new Uint8Array(bits)));
 }
 const IS_ADMIN = LS.get("adminHash", "") === ADMIN_LOGIN.hash;
-if (location.hash) history.replaceState(null, "", location.pathname + location.search);
 if (!IS_ADMIN) {
-  ["#btnUpload", "#btnSettings", "#file", "#mSettings"].forEach(s => { const el = $(s); if (el) el.remove(); });
+  ["#btnUpload", "#btnSettings", "#file", "#mSettings", "#mUpload"].forEach(s => { const el = $(s); if (el) el.remove(); });
 }
 $("#btnLogin").onclick = async () => {
   const u = $("#loginUser").value.trim(), p = $("#loginPass").value;
@@ -924,7 +1167,7 @@ const lo = $("#btnLogout"); if (lo) lo.onclick = () => { LS.set("adminHash", "")
 
 if (!("DecompressionStream" in window)) {
   $("#app").innerHTML = `<div class="empty">This browser is too old to read Excel files. Please update Chrome or Safari.</div>`;
-} else loadPublished();
+} else { loadAll(); checkVersion(); }
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 </script>

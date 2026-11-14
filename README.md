@@ -1,48 +1,36 @@
-# PD Rating Status Dashboard
+# Rating Exercises Dashboard
 
-Live app: https://manojkitecivil2017-bit.github.io/pd-dashboard/
+Live app: https://manojcivil2017-bit.github.io/pd-dashboard/
 
-A mobile app (PWA) showing project status from the PD Rating Excel file, with WhatsApp sharing.
+A mobile app (PWA) showing the status of the ongoing rating exercises, with WhatsApp sharing and PDF reports.
 It runs entirely on free GitHub Pages hosting, with no server and no outside libraries.
+
+| Exercise | Data file in this repository | Grouped by |
+|---|---|---|
+| NHAI · PD Rating | `nhai-pd.xlsx` | RO → PIU |
+| NHIDCL · AE/IE Consultant Rating | `nhidcl-aeie.xlsx` | PMU |
+| MoRTH · DPR Consultant Rating | `morth-dpr.xlsx` | RO |
+| MoRTH · AE/IE Consultant Rating | `morth-aeie.xlsx` | RO |
+
+Direct links open one exercise, e.g. `…/pd-dashboard/#nhai-pd`, `#nhidcl-aeie`, `#morth-dpr`, `#morth-aeie`.
 
 ## Install on a phone
 - **Android (Chrome):** open the link → menu ⋮ → **Add to Home screen / Install app**.
 - **iPhone (Safari):** open the link → Share button → **Add to Home Screen**.
 
-## View-only link vs admin login
-- The link is **view-only** for everyone: no Upload Excel and no Settings.
-- Admins tap **Admin login** at the bottom of the page and enter the username and password.
-  The device stays logged in until **Settings → Log out of admin on this device**.
-- Only a salted PBKDF2 hash of the password is stored in `index.html` (the `ADMIN_LOGIN` line), never the password itself.
-- To change the password, generate a new salt and hash (PBKDF2-SHA256, same iteration count) and replace the `ADMIN_LOGIN` line.
-- Publishing for everyone still needs the GitHub token, so a login alone cannot change what others see.
+## View-only vs admin
+- Everyone sees the dashboards, filters, project details, WhatsApp sharing and PDF reports.
+- **Upload Excel** and **Settings** appear only after **Admin login** (link at the bottom of the page).
+- Only a salted PBKDF2 hash of the admin password is stored in `index.html` (`ADMIN_LOGIN`).
 
-## Update the data (everyone sees it)
-**Option 1, on GitHub (no setup):**
-1. Rename your new Excel file to `status.xlsx`.
-2. In this repository click **Add file → Upload files**, drop in `status.xlsx`, then click **Commit changes**.
-3. Within 1–2 minutes everyone sees the new data.
+## Update the data
+**From the app (admin):** Upload Excel → choose the exercise → choose the file → check the preview → **Publish for everyone**.
+The app warns if a file looks like it belongs to a different exercise. Publishing needs a GitHub token in Settings (one-time):
+GitHub → Settings → Developer settings → Fine-grained tokens → repository `pd-dashboard`, permission **Contents: Read and write**.
 
-**Option 2, from inside the app (after a one-time setup):**
-1. On GitHub: profile photo → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
-   - Repository access: **Only select repositories → pd-dashboard**
-   - Permissions → Repository permissions → **Contents: Read and write**
-   - Pick an expiry date, generate it, and copy the token.
-2. In the app, open ⚙ Settings, paste the token, and Save. The token is stored only on that device.
-3. Then: **Upload Excel** → check the preview → **Publish for everyone**.
-
-Uploading in the app *without* publishing only previews the file on your own device.
+**On GitHub (no setup):** rename the Excel to the file name in the table above, then **Add file → Upload files** → Commit.
 
 ## Sharing and PDF reports
-- Green **Share status** button: share a text summary on WhatsApp, share a PDF report (on a phone pick WhatsApp in the share menu), or download the PDF.
-- The PDF button at the top downloads the report directly.
-- Reports follow the current filters. Project-wise details are included only when a PIU is selected.
-
-## Excel format
-The first sheet needs a header row with: UPN ID, RO, PIU, Project Name, Progress (%), Status, Last Updated.
-Status values: COMPLETED / IN PROGRESS / NOT STARTED. Any file name works when you upload in the app.
-
-## Files
-- `index.html`: the whole app (dashboard, built-in Excel reader, WhatsApp sharing)
-- `status.xlsx`: the published data
-- `sw.js`, `manifest.webmanifest`, `icon-*.png`: make it installable and work offline
+- Green **Share status** button: WhatsApp text summary, share PDF (on a phone pick WhatsApp), or download PDF.
+- Overview screen → summary of all exercises. Inside an exercise → report for the current filters.
+- Project-wise details are included in the PDF only when the lowest level is selected (PIU for NHAI, PMU for NHIDCL, RO for MoRTH).
