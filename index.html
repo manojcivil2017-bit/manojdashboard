@@ -326,7 +326,7 @@ header h1{font-size:18px;line-height:1.2}
 
 <script>
 "use strict";
-const APP_VERSION = "2.0.0";
+const APP_VERSION = "2.0.1";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem("pd_"+k, JSON.stringify(v)); }catch(e){} }
@@ -912,7 +912,7 @@ function pdfKit(title, sub, brand){
   K.finish = name => {
     const n = pdf.pages.length;
     pdf.pages.forEach((ops, i) => { pdf.ops = ops; pdf.line(M, pdf.H - 30, M + W, pdf.H - 30, PC.line);
-      pdf.text(M, pdf.H - 18, "Rating Exercises Dashboard  |  " + appUrl(), 7.5, false, PC.muted); pdf.text(M + W, pdf.H - 18, `Page ${i + 1} of ${n}`, 7.5, false, PC.muted, "right"); });
+      pdf.text(M + W, pdf.H - 18, `Page ${i + 1} of ${n}`, 7.5, false, PC.muted, "right"); });
     return new File([pdf.blob()], name.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/_+/g, "_") + "_" + new Date().toISOString().slice(0, 10) + ".pdf", { type: "application/pdf" });
   };
   return K;
