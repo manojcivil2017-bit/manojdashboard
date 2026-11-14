@@ -170,14 +170,25 @@ main{max-width:1100px;margin:0 auto;padding:12px 12px 90px}
     <button class="btn" data-close>Cancel</button>
     <button class="btn primary" id="btnSaveSet">Save</button>
   </div>
+  <div class="row"><button class="btn" id="btnLogout" style="color:var(--warn)">Log out of admin on this device</button></div>
   <div class="hint" id="appVer"></div>
+</div></div>
+
+<div class="modal" id="mLogin"><div class="sheet">
+  <h3>Admin login <button class="x" data-close>×</button></h3>
+  <label for="loginUser">Username</label>
+  <input type="text" id="loginUser" autocomplete="username" autocapitalize="off">
+  <label for="loginPass">Password</label>
+  <input type="password" id="loginPass" autocomplete="current-password">
+  <div class="row"><button class="btn primary" id="btnLogin">Log in</button></div>
+  <div class="hint" id="loginMsg">Admins can upload and publish new Excel data. Everyone else sees a view-only dashboard.</div>
 </div></div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 "use strict";
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 const DATA_FILE = "status.xlsx";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
@@ -435,7 +446,7 @@ function render(){
     ${list.length ? `<div class="list">${sorted.slice(0, S.shown).map(projHTML).join("")}</div>
     ${list.length > S.shown ? `<button class="btn more" id="btnMore">Show more (${fmt(list.length - S.shown)} left)</button>` : ""}` : `<div class="empty">No projects match these filters.</div>`}
   </div>
-  <div class="foot">Source: ${esc(S.source)} · Latest update in file: ${fdate(latestUpd(S.all))} · v${APP_VERSION}</div>`;
+  <div class="foot">Source: ${esc(S.source)} · Latest update in file: ${fdate(latestUpd(S.all))} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
   bind(sorted);
 }
 function projHTML(p, i){
@@ -464,6 +475,7 @@ function bind(sorted){
   });
   document.querySelectorAll("tr.row").forEach(r => r.onclick = () => { if (S.f.ro) set("piu", r.dataset.g); else { S.f.piu = ""; set("ro", r.dataset.g); } window.scrollTo({ top: 0, behavior: "smooth" }); });
   document.querySelectorAll("th[data-sort]").forEach(h => h.onclick = () => { const k = h.dataset.sort; if (S.sortKey === k) S.sortDir *= -1; else { S.sortKey = k; S.sortDir = k === "name" ? 1 : -1; } render(); });
+  const ll = $("#lnkLogin"); if (ll) ll.onclick = e => { e.preventDefault(); $("#loginMsg").textContent = "Admins can upload and publish new Excel data. Everyone else sees a view-only dashboard."; openModal("#mLogin"); setTimeout(() => $("#loginUser").focus(), 50); };
   const m = $("#btnMore"); if (m) m.onclick = () => { S.shown += 50; render(); };
   document.querySelectorAll("[data-share]").forEach(b => b.onclick = () => openShare(projectMsg(sorted[+b.dataset.share])));
 }
@@ -616,17 +628,33 @@ $("#file").onchange = async e => {
   } catch (err) { banner("err", "Could not read that file: " + err.message); }
 };
 
-/* ---------- View-only for everyone except the admin device ----------
-   Admin mode is switched on for a device by opening the link once with #admin,
-   and switched off with #viewer. Shared links (and WhatsApp links) never carry it. */
-(function(){
-  if (location.hash === "#admin") LS.set("admin", true);
-  if (location.hash === "#viewer") LS.set("admin", false);
-  if (location.hash === "#admin" || location.hash === "#viewer") history.replaceState(null, "", location.pathname + location.search);
-  if (!LS.get("admin", false)) {
-    ["#btnUpload", "#btnSettings", "#file", "#mSettings"].forEach(s => { const el = $(s); if (el) el.remove(); });
-  }
-})();
+/* ---------- Admin login (view-only for everyone else) ----------
+   Only a salted PBKDF2 hash of the password is stored here, never the password itself.
+   To change the password, generate a new hash (see README) and replace ADMIN_LOGIN. */
+const ADMIN_LOGIN = { user: "admin", salt: "ZP10kdPsZekiOz/UDOWyNQ==", iter: 200000, hash: "jIMMw5rZD4JN9RsG7uPT37BbZV+NZkvNM8nVqGM2a9I=" };
+async function pbkdf2(pw, saltB64, iter){
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
+  const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: iter }, key, 256);
+  return btoa(String.fromCharCode(...new Uint8Array(bits)));
+}
+const IS_ADMIN = LS.get("adminHash", "") === ADMIN_LOGIN.hash;
+if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+if (!IS_ADMIN) {
+  ["#btnUpload", "#btnSettings", "#file", "#mSettings"].forEach(s => { const el = $(s); if (el) el.remove(); });
+}
+$("#btnLogin").onclick = async () => {
+  const u = $("#loginUser").value.trim(), p = $("#loginPass").value;
+  const msg = $("#loginMsg"); msg.textContent = "Checking…";
+  try {
+    const h = await pbkdf2(p, ADMIN_LOGIN.salt, ADMIN_LOGIN.iter);
+    if (u.toLowerCase() === ADMIN_LOGIN.user.toLowerCase() && h === ADMIN_LOGIN.hash) {
+      LS.set("adminHash", h); msg.textContent = "Logged in."; location.reload();
+    } else { msg.textContent = "Wrong username or password."; $("#loginPass").value = ""; }
+  } catch (e) { msg.textContent = "Login needs a secure (https) connection."; }
+};
+$("#loginPass").addEventListener("keydown", e => { if (e.key === "Enter") $("#btnLogin").click(); });
+const lo = $("#btnLogout"); if (lo) lo.onclick = () => { LS.set("adminHash", ""); LS.set("token", ""); location.reload(); };
 
 if (!("DecompressionStream" in window)) {
   $("#app").innerHTML = `<div class="empty">This browser is too old to read Excel files. Please update Chrome or Safari.</div>`;

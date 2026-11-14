@@ -9,12 +9,13 @@ It runs entirely on free GitHub Pages hosting, with no server and no outside lib
 - **Android (Chrome):** open the link → menu ⋮ → **Add to Home screen / Install app**.
 - **iPhone (Safari):** open the link → Share button → **Add to Home Screen**.
 
-## View-only link vs admin
-- The normal link is **view-only**: no Upload Excel and no Settings. Share this one.
-- To turn on admin buttons on **your own** device, open the link once with `#admin` at the end:
-  `https://manojkitecivil2017-bit.github.io/pd-dashboard/#admin`. Your device remembers it.
-- To turn them off again on a device, open it once with `#viewer` at the end.
-- Even if someone else turns admin on, they cannot change what others see without your GitHub token.
+## View-only link vs admin login
+- The link is **view-only** for everyone: no Upload Excel and no Settings.
+- Admins tap **Admin login** at the bottom of the page and enter the username and password.
+  The device stays logged in until **Settings → Log out of admin on this device**.
+- Only a salted PBKDF2 hash of the password is stored in `index.html` (the `ADMIN_LOGIN` line), never the password itself.
+- To change the password, generate a new salt and hash (PBKDF2-SHA256, same iteration count) and replace the `ADMIN_LOGIN` line.
+- Publishing for everyone still needs the GitHub token, so a login alone cannot change what others see.
 
 ## Update the data (everyone sees it)
 **Option 1, on GitHub (no setup):**
