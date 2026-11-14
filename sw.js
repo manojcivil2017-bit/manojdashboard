@@ -1,5 +1,5 @@
 // Offline support: app files are cached; the data file is always fetched fresh when online.
-const CACHE = "pd-status-v3";
+const CACHE = "pd-status-v4";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

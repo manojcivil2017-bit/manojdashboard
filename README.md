@@ -33,6 +33,11 @@ It runs entirely on free GitHub Pages hosting, with no server and no outside lib
 
 Uploading in the app *without* publishing only previews the file on your own device.
 
+## Sharing and PDF reports
+- Green **Share status** button: share a text summary on WhatsApp, share a PDF report (on a phone pick WhatsApp in the share menu), or download the PDF.
+- The PDF button at the top downloads the report directly.
+- Reports follow the current filters. Project-wise details are included only when a PIU is selected.
+
 ## Excel format
 The first sheet needs a header row with: UPN ID, RO, PIU, Project Name, Progress (%), Status, Last Updated.
 Status values: COMPLETED / IN PROGRESS / NOT STARTED. Any file name works when you upload in the app.

@@ -121,6 +121,65 @@ main{max-width:1100px;margin:0 auto;padding:12px 12px 90px}
 .loading{padding:60px 0;text-align:center;color:var(--muted)}
 .fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;border:0;border-radius:999px;background:var(--wa);color:#fff;height:54px;padding:0 18px;display:flex;align-items:center;gap:8px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
 .fab svg{width:24px;height:24px;fill:#fff}
+
+/* v1.3 look */
+header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
+.card,.kpi{box-shadow:0 1px 2px rgba(16,40,60,.05),0 4px 14px rgba(16,40,60,.05)}
+.card h2{font-size:16px}
+.scopebar{font-size:13px;color:var(--muted);margin:-2px 2px 10px}
+.scopebar b{color:var(--ink)}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+.grp{min-width:540px}
+.grp th{white-space:normal;line-height:1.2;vertical-align:bottom}
+.grp td.nm{max-width:none;white-space:normal;min-width:150px}
+.grp .gname{font-weight:700;font-size:14px;color:var(--brand);margin-bottom:5px}
+.grp tr.row:hover .gname{text-decoration:underline}
+.grp .stack{height:8px}
+.grp td small{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.grp .c-done{color:var(--done);font-weight:700}.grp .c-prog{color:var(--prog);font-weight:700}.grp .c-ns{color:#5d6b78;font-weight:700}
+.phead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.phead h2{margin:0;flex:1;min-width:180px}
+.ptab{width:100%;min-width:760px;border-collapse:collapse;font-size:13px;margin-top:12px}
+.ptab th{background:#0f3d5e;color:#fff;text-align:left;font-size:12px;font-weight:600;padding:9px 8px;white-space:nowrap}
+.ptab th:first-child{border-radius:8px 0 0 0}.ptab th:last-child{border-radius:0 8px 0 0}
+.ptab td{padding:9px 8px;border-bottom:1px solid #edf0f3;vertical-align:top}
+.ptab tbody tr:nth-child(even) td{background:#f8fafb}
+.ptab .idx{color:var(--muted);width:28px}
+.ptab .pname{font-weight:700;color:var(--brand);min-width:260px;line-height:1.35}
+.ptab .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:nowrap}
+.ptab .mini{height:5px;background:#eef1f4;border-radius:3px;margin-top:6px;overflow:hidden;width:110px}
+.ptab .mini i{display:block;height:100%}
+.ptab .stale{color:var(--warn);font-size:11px;font-weight:600;margin-top:4px;white-space:nowrap}
+.ptab .upd{color:var(--muted);font-size:11px;margin-top:4px;white-space:nowrap}
+.ptab .badge{font-size:12px;padding:4px 9px}
+.scope{font-size:13px;color:var(--muted);margin-bottom:12px}
+.bigopt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;margin-bottom:8px;cursor:pointer}
+.bigopt:hover{background:#f6f9fb}
+.bigopt b{display:block;font-size:15px}.bigopt small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.bigopt .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:#fff;font-weight:800;font-size:13px}
+.bigopt .ic svg{width:26px;height:26px;fill:#fff}
+.ic.wa{background:var(--wa)}.ic.pdf{background:#d93025}.ic.dl{background:var(--brand2);font-size:20px}
+.psub{display:none}
+.grp .sm{display:none}
+@media(max-width:700px){
+  .ptab{min-width:0;font-size:13px}
+  .ptab .c-upn,.ptab .c-ro,.ptab .c-piu,.ptab .idx{display:none}
+  .ptab .pname{min-width:0}
+  .psub{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:4px;font-weight:500;font-size:11.5px;color:var(--muted)}
+  .ptab td:nth-child(6){width:120px}
+  .ptab .stale,.ptab .upd{white-space:normal}
+  .ptab .mini{width:90px}
+  .grp{min-width:0;font-size:12.5px}
+  .grp th, .grp th.n{font-size:10.5px;padding:6px 3px;white-space:normal}
+  .grp td{padding:8px 3px}
+  .grp td.nm{min-width:0;width:30%}
+  .grp td.n,.grp th.n{padding-left:2px;padding-right:2px}
+  .grp td{font-size:12px}
+  .grp .lg{display:none}.grp .sm{display:inline}
+  .grp .gname{font-size:13px}
+  .grp td small{font-size:10px}
+}
+#msgBox{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
 </style>
 </head>
 <body>
@@ -129,6 +188,7 @@ main{max-width:1100px;margin:0 auto;padding:12px 12px 90px}
     <h1>PD Rating Status</h1>
     <div class="sub" id="asof">Loading…</div>
   </div>
+  <button class="hbtn" id="btnPdf" title="Download PDF report"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM12 11v5.2l-2.1-2.1-1.4 1.4L12 19l3.5-3.5-1.4-1.4-2.1 2.1V11h-2z"/></svg><span class="lbl">PDF</span></button>
   <button class="hbtn" id="btnUpload" title="Upload Excel"><svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-16-5 5h3v6h4V9h3l-5-5z"/></svg><span class="lbl">Upload Excel</span></button>
   <button class="hbtn" id="btnSettings" title="Settings"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.4-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4l-.4 2.7a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.4 2.5-1c.5.4 1.1.7 1.7 1l.4 2.7h4l.4-2.7c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.4L19.4 13zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
   <input type="file" id="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
@@ -139,22 +199,30 @@ main{max-width:1100px;margin:0 auto;padding:12px 12px 90px}
   <div id="app"><div class="loading">Loading project data…</div></div>
 </main>
 
-<button class="fab" id="fab" title="Share on WhatsApp"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>Share</button>
+<button class="fab" id="fab" title="Share on WhatsApp"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg><span>Share status</span></button>
 
 <div class="modal" id="mShare"><div class="sheet">
-  <h3>Share status on WhatsApp <button class="x" data-close>×</button></h3>
-  <div class="seg" id="shareOpts">
-    <label><input type="checkbox" id="optBreak" checked> Breakdown by RO / PIU</label>
-    <label><input type="checkbox" id="optStale" checked> Stale-update count</label>
-    <label><input type="checkbox" id="optLink" checked> Dashboard link</label>
+  <h3><span id="shareTitle">Share on WhatsApp</span> <button class="x" data-close>×</button></h3>
+  <div class="scope" id="shareScope"></div>
+  <div id="shareMenu">
+    <button class="bigopt" id="optMsg"><span class="ic wa"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></span><span><b>Share status message</b><small>Text summary opens in WhatsApp</small></span></button>
+    <button class="bigopt" id="optPdfShare"><span class="ic pdf">PDF</span><span><b>Share PDF report on WhatsApp</b><small>On your phone, choose WhatsApp in the share menu</small></span></button>
+    <button class="bigopt" id="optPdfDl"><span class="ic dl">⬇</span><span><b>Download PDF report</b><small>Save the report to this device</small></span></button>
+    <div class="hint">The PDF covers the current filters. Project-wise details are included only when a PIU is selected.</div>
   </div>
-  <label for="shareText">Message (you can edit before sending)</label>
-  <textarea id="shareText"></textarea>
-  <div class="row">
-    <button class="btn" id="btnCopy">Copy text</button>
-    <button class="btn wa" id="btnWa">Open WhatsApp</button>
+  <div id="msgBox" hidden>
+    <div class="seg" id="shareOpts">
+      <label><input type="checkbox" id="optBreak" checked> Breakdown by RO / PIU</label>
+      <label><input type="checkbox" id="optStale" checked> Stale-update count</label>
+      <label><input type="checkbox" id="optLink" checked> Dashboard link</label>
+    </div>
+    <label for="shareText">Message (you can edit before sending)</label>
+    <textarea id="shareText"></textarea>
+    <div class="row">
+      <button class="btn" id="btnCopy">Copy text</button>
+      <button class="btn wa" id="btnWa">Open WhatsApp</button>
+    </div>
   </div>
-  <div class="hint">WhatsApp opens with this message filled in. You pick the group or contact and press send.</div>
 </div></div>
 
 <div class="modal" id="mSettings"><div class="sheet">
@@ -188,7 +256,7 @@ main{max-width:1100px;margin:0 auto;padding:12px 12px 90px}
 
 <script>
 "use strict";
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.3.0";
 const DATA_FILE = "status.xlsx";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
@@ -335,7 +403,7 @@ function toProjects(rows){
 const S = {
   all: [], source: "", fileDate: null, isLocal: false, localFile: null, localBuf: null,
   f: { ro: "", piu: "", status: "", q: "", stale: false },
-  shown: 30, sortKey: "total", sortDir: -1,
+  shown: 30, showProj: false, sortKey: "total", sortDir: -1,
   staleDays: LS.get("staleDays", 15)
 };
 const STATUSES = [
@@ -366,6 +434,17 @@ const uniq = (list, k) => Array.from(new Set(list.map(p => p[k]))).sort((a, b) =
 function stackBar(c){
   return `<div class="stack">${STATUSES.map(s => c[s.k] ? `<i style="width:${c[s.k] * 100 / c.total}%;background:${s.c}" title="${s.label}: ${c[s.k]}"></i>` : "").join("")}</div>`;
 }
+const ST_ORDER = { "IN PROGRESS": 0, "NOT STARTED": 1, "COMPLETED": 2 };
+const sortProjects = list => list.slice().sort((a, b) => (ST_ORDER[a.status] ?? 3) - (ST_ORDER[b.status] ?? 3) || (b.prog ?? -1) - (a.prog ?? -1) || a.name.localeCompare(b.name));
+const statusText = p => p.status === "NOT STARTED" ? "Not started" : `${stInfo(p.status).label}${p.prog == null ? "" : " · " + p.prog + "%"}`;
+const scopeLabel = () => S.f.piu ? `PIU ${S.f.piu}${S.f.ro ? " (" + S.f.ro + ")" : ""}` : (S.f.ro || "All ROs");
+function groupRows(src, by){
+  const groups = {};
+  for (const p of src) (groups[p[by]] ||= []).push(p);
+  return Object.entries(groups).map(([name, ps]) => ({ name, ...counts(ps) }));
+}
+const WA_SVG = `<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>`;
+
 function render(){
   const app = $("#app");
   if (!S.all.length) return;
@@ -373,23 +452,14 @@ function render(){
   const list = filtered();
   const c = counts(list);
   const ros = uniq(S.all, "ro"), pius = uniq(base, "piu");
-  const groupBy = S.f.ro ? "piu" : "ro";
-  // group list ignores the status chip so the bars stay meaningful
+  const groupBy = S.f.ro ? "piu" : "ro", gLabel = groupBy === "ro" ? "RO" : "PIU";
+  // group table ignores the status chip so the bars stay meaningful
   const gsrc = S.all.filter(p => (!S.f.ro || p.ro === S.f.ro) && (!S.f.piu || p.piu === S.f.piu));
-  const groups = {};
-  for (const p of gsrc) (groups[p[groupBy]] ||= []).push(p);
-  let gl = Object.entries(groups).map(([name, ps]) => ({ name, ...counts(ps) }));
+  const gl = groupRows(gsrc, groupBy);
   const sk = S.sortKey, sd = S.sortDir;
   gl.sort((a, b) => sk === "name" ? sd * a.name.localeCompare(b.name) : (sd * ((a[sk] ?? 0) - (b[sk] ?? 0)) || a.name.localeCompare(b.name)));
   const ar = k => S.sortKey === k ? (S.sortDir === -1 ? " ▼" : " ▲") : "";
-
-  // in-progress buckets
-  const ip = list.filter(p => p.status === "IN PROGRESS");
-  const bdef = [[0, 25, "0–25%"], [25, 50, "25–50%"], [50, 75, "50–75%"], [75, 90, "75–90%"], [90, 101, "90%+"]];
-  const bk = bdef.map(([a, b, l]) => ({ l, n: ip.filter(p => (p.prog ?? 0) >= a && (p.prog ?? 0) < b).length }));
-  const bmax = Math.max(1, ...bk.map(b => b.n));
-
-  const sorted = list.slice().sort((a, b) => (isStale(b) - isStale(a)) || ((b.upd ? 1 : 0) - (a.upd ? 1 : 0)) || ((a.upd && b.upd) ? a.upd - b.upd : 0) || a.name.localeCompare(b.name));
+  const sorted = sortProjects(list);
   const anyFilter = S.f.ro || S.f.piu || S.f.status || S.f.q || S.f.stale;
 
   app.innerHTML = `
@@ -403,63 +473,66 @@ function render(){
     <button class="chip ${S.f.stale ? "on" : ""}" id="chStale"><span class="dot" style="background:var(--warn)"></span>No update &gt; ${S.staleDays} days</button>
     ${anyFilter ? `<button class="chip clear" id="chClear">Clear filters ×</button>` : ""}
   </div>
+  <div class="scopebar">Showing: <b>${esc(scopeLabel())}</b></div>
   <div class="kpis">
     <div class="kpi total" style="--c:var(--brand2)" data-k=""><div class="k">Total projects</div><div class="v">${fmt(c.total)}</div><div class="p">Average progress ${c.avg}%</div></div>
-    ${STATUSES.map(s => `<div class="kpi" style="--c:${s.c}" data-k="${s.k}"><div class="k">${s.label}</div><div class="v">${fmt(c[s.k] || 0)}</div><div class="p">${pct(c[s.k] || 0, c.total)}% of total</div></div>`).join("")}
-    <div class="kpi" style="--c:var(--warn)" data-k="stale"><div class="k">No recent update</div><div class="v">${fmt(c.stale)}</div><div class="p">In progress, &gt; ${S.staleDays} days</div></div>
+    ${STATUSES.map(s => `<div class="kpi" style="--c:${s.c}" data-k="${s.k}"><div class="k">${s.label}</div><div class="v" style="color:${s.c === "var(--ns)" ? "#5d6b78" : s.c}">${fmt(c[s.k] || 0)}</div><div class="p">${pct(c[s.k] || 0, c.total)}% of total</div></div>`).join("")}
+    <div class="kpi" style="--c:var(--warn)" data-k="stale"><div class="k">No recent update</div><div class="v" style="color:var(--warn)">${fmt(c.stale)}</div><div class="p">In progress, &gt; ${S.staleDays} days</div></div>
   </div>
   <div class="card">
-    <h2>Overall status<span class="note">${esc(S.f.piu || S.f.ro || "All ROs")}</span></h2>
+    <h2>Overall status<span class="note">${esc(scopeLabel())}</span></h2>
     ${c.total ? stackBar(c) : ""}
-    <div class="legend">${STATUSES.map(s => `<span><b style="background:${s.c}"></b>${s.label} ${pct(c[s.k] || 0, c.total)}%</span>`).join("")}</div>
+    <div class="legend">${STATUSES.map(s => `<span><b style="background:${s.c}"></b>${s.label} ${fmt(c[s.k] || 0)} (${pct(c[s.k] || 0, c.total)}%)</span>`).join("")}</div>
   </div>
   ${S.f.piu ? "" : `
   <div class="card">
-    <h2>By ${groupBy === "ro" ? "RO" : "PIU"}<span class="note">Tap a row to drill down</span></h2>
-    <table class="grp">
+    <h2>Status by ${gLabel}<span class="note">${S.f.ro ? esc(S.f.ro) + " · " : ""}tap a name to drill down</span></h2>
+    <div class="tscroll"><table class="grp">
       <thead><tr>
-        <th data-sort="name">${groupBy === "ro" ? "RO" : "PIU"}${ar("name")}</th>
+        <th data-sort="name">${gLabel} name${ar("name")}</th>
         <th class="n" data-sort="total">Total${ar("total")}</th>
-        <th class="bar">Status</th>
-        <th class="n" data-sort="donePct">✅${ar("donePct")}</th>
-        <th class="n hide-sm" data-sort="IN PROGRESS">🔄${ar("IN PROGRESS")}</th>
-        <th class="n hide-sm" data-sort="NOT STARTED">⏳${ar("NOT STARTED")}</th>
-        <th class="n" data-sort="stale">⚠️${ar("stale")}</th>
+        <th class="n" data-sort="donePct"><span class="lg">Completed</span><span class="sm">Done</span>${ar("donePct")}</th>
+        <th class="n" data-sort="IN PROGRESS"><span class="lg">In progress</span><span class="sm">In prog.</span>${ar("IN PROGRESS")}</th>
+        <th class="n" data-sort="NOT STARTED">Not started${ar("NOT STARTED")}</th>
+        <th class="n" data-sort="stale"><span class="lg">No update<br>&gt; ${S.staleDays}d</span><span class="sm">No upd. &gt;${S.staleDays}d</span>${ar("stale")}</th>
       </tr></thead>
       <tbody>${gl.map(g => `<tr class="row" data-g="${esc(g.name)}">
-        <td class="nm" title="${esc(g.name)}">${esc(g.name.replace(/^RO-/, ""))}</td>
-        <td class="n">${g.total}</td>
-        <td class="bar">${stackBar(g)}</td>
-        <td class="n">${pct(g["COMPLETED"], g.total)}%</td>
-        <td class="n hide-sm">${g["IN PROGRESS"]}</td>
-        <td class="n hide-sm">${g["NOT STARTED"]}</td>
-        <td class="n" style="color:${g.stale ? "var(--warn)" : "inherit"}">${g.stale}</td></tr>`).join("")}</tbody>
-    </table>
-    <div class="legend"><span>✅ % completed</span><span>🔄 in progress</span><span>⏳ not started</span><span>⚠️ in progress, no update &gt; ${S.staleDays} days</span></div>
+        <td class="nm"><div class="gname">${esc(g.name)} ›</div>${stackBar(g)}</td>
+        <td class="n"><b>${g.total}</b></td>
+        <td class="n c-done">${g["COMPLETED"]}<small>${pct(g["COMPLETED"], g.total)}%</small></td>
+        <td class="n c-prog">${g["IN PROGRESS"]}<small>${pct(g["IN PROGRESS"], g.total)}%</small></td>
+        <td class="n c-ns">${g["NOT STARTED"]}<small>${pct(g["NOT STARTED"], g.total)}%</small></td>
+        <td class="n" style="color:${g.stale ? "var(--warn)" : "var(--muted)"};font-weight:${g.stale ? 700 : 400}">${g.stale}</td></tr>`).join("")}</tbody>
+    </table></div>
   </div>`}
   <div class="card">
-    <h2>In-progress projects by progress<span class="note">${fmt(ip.length)} projects</span></h2>
-    <div class="buckets">${bk.map(b => `<div class="bk"><div class="cnt">${b.n}</div><div class="col" style="height:${b.n * 80 / bmax}%"></div><div class="lb">${b.l}</div></div>`).join("")}</div>
-  </div>
-  <div class="card" style="padding-bottom:6px">
-    <h2>Projects<span class="note">${fmt(list.length)} shown · oldest update first</span></h2>
-    ${list.length ? `<div class="list">${sorted.slice(0, S.shown).map(projHTML).join("")}</div>
+    <div class="phead">
+      <h2>Project details<span class="note">${fmt(list.length)} project${list.length === 1 ? "" : "s"}</span></h2>
+      <button class="btn ${S.showProj ? "" : "primary"}" id="btnToggleProj">${S.showProj ? "Hide project details ▲" : "Show project details ▼"}</button>
+    </div>
+    ${!S.showProj ? "" : list.length ? `
+    <div class="tscroll"><table class="ptab">
+      <thead><tr><th class="idx">#</th><th>Project name</th><th class="c-upn">UPN ID</th><th class="c-ro">RO</th><th class="c-piu">PIU</th><th>Current status</th><th></th></tr></thead>
+      <tbody>${sorted.slice(0, S.shown).map((p, i) => projRow(p, i)).join("")}</tbody>
+    </table></div>
     ${list.length > S.shown ? `<button class="btn more" id="btnMore">Show more (${fmt(list.length - S.shown)} left)</button>` : ""}` : `<div class="empty">No projects match these filters.</div>`}
   </div>
   <div class="foot">Source: ${esc(S.source)} · Latest update in file: ${fdate(latestUpd(S.all))} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
   bind(sorted);
 }
-function projHTML(p, i){
+function projRow(p, i){
   const s = stInfo(p.status), st = isStale(p);
-  const pr = p.prog == null ? null : p.prog;
-  return `<div class="proj">
-    <div class="top"><div class="nm">${esc(p.name || "(no name)")}</div>
-      <button class="ibtn" data-share="${i}" title="Share this project on WhatsApp"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></button>
-    </div>
-    <div class="meta"><span>${esc(p.upn)}</span><span>${esc(p.ro)}</span><span>PIU ${esc(p.piu)}</span><span>Updated ${fdate(p.upd)}</span></div>
-    <div class="pb"><span class="badge ${s.cls}">${s.label}</span>${st ? `<span class="badge b-stale">No update &gt; ${S.staleDays}d</span>` : ""}
-      <div class="track"><div class="fill" style="width:${pr || 0}%;background:${s.c}"></div></div><span class="pc">${pr == null ? "–" : pr + "%"}</span></div>
-  </div>`;
+  return `<tr>
+    <td class="idx">${i + 1}</td>
+    <td class="pname">${esc(p.name || "(no name)")}<div class="psub"><span>UPN ${esc(p.upn)}</span><span>${esc(p.ro)}</span><span>PIU ${esc(p.piu)}</span></div></td>
+    <td class="mono c-upn">${esc(p.upn)}</td>
+    <td class="c-ro">${esc(p.ro)}</td>
+    <td class="c-piu">${esc(p.piu)}</td>
+    <td><span class="badge ${s.cls}">${esc(statusText(p))}</span>
+      ${p.prog != null && p.status !== "NOT STARTED" ? `<div class="mini"><i style="width:${p.prog}%;background:${s.c}"></i></div>` : ""}
+      ${st ? `<div class="stale">No update since ${fdate(p.upd)}</div>` : `<div class="upd">Updated ${fdate(p.upd)}</div>`}</td>
+    <td><button class="ibtn" data-share="${i}" title="Share this project on WhatsApp">${WA_SVG}</button></td>
+  </tr>`;
 }
 function bind(sorted){
   const set = (k, v) => { S.f[k] = v; S.shown = 30; render(); };
@@ -475,6 +548,7 @@ function bind(sorted){
   });
   document.querySelectorAll("tr.row").forEach(r => r.onclick = () => { if (S.f.ro) set("piu", r.dataset.g); else { S.f.piu = ""; set("ro", r.dataset.g); } window.scrollTo({ top: 0, behavior: "smooth" }); });
   document.querySelectorAll("th[data-sort]").forEach(h => h.onclick = () => { const k = h.dataset.sort; if (S.sortKey === k) S.sortDir *= -1; else { S.sortKey = k; S.sortDir = k === "name" ? 1 : -1; } render(); });
+  $("#btnToggleProj").onclick = () => { S.showProj = !S.showProj; S.shown = 30; render(); };
   const ll = $("#lnkLogin"); if (ll) ll.onclick = e => { e.preventDefault(); $("#loginMsg").textContent = "Admins can upload and publish new Excel data. Everyone else sees a view-only dashboard."; openModal("#mLogin"); setTimeout(() => $("#loginUser").focus(), 50); };
   const m = $("#btnMore"); if (m) m.onclick = () => { S.shown += 50; render(); };
   document.querySelectorAll("[data-share]").forEach(b => b.onclick = () => openShare(projectMsg(sorted[+b.dataset.share])));
@@ -511,13 +585,204 @@ function projectMsg(p){
   return [`*${p.name}*`, `UPN: ${p.upn}`, `${p.ro} · PIU ${p.piu}`, `${s.em} Status: *${s.label}*`, `📈 Progress: ${p.prog == null ? "–" : p.prog + "%"}`,
     `🗓 Last updated: ${fdate(p.upd)}${isStale(p) ? ` ⚠️ (no update > ${S.staleDays} days)` : ""}`, "", `Dashboard: ${appUrl()}`].join("\n");
 }
+/* ---------- PDF report (built in, no external libraries) ---------- */
+const HW = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+const HBW = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+const pdfSafe = s => String(s == null ? "" : s).replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, "-").replace(/…/g, "...").replace(/[^\x20-\x7E\xA0-\xFF]/g, "?");
+class PDF {
+  constructor(){ this.W = 595.28; this.H = 841.89; this.pages = []; this.add(); }
+  add(){ this.ops = []; this.pages.push(this.ops); }
+  tw(s, size, bold){ const w = bold ? HBW : HW; let t = 0; for (const ch of pdfSafe(s)) { const c = ch.charCodeAt(0); t += (c >= 32 && c <= 126) ? w[c - 32] : 556; } return t * size / 1000; }
+  col(c){ return c.map(v => (v / 255).toFixed(3)).join(" "); }
+  rect(x, y, w, h, fill, stroke){
+    this.ops.push(`${fill ? this.col(fill) + " rg " : ""}${stroke ? this.col(stroke) + " RG 0.6 w " : ""}${x.toFixed(2)} ${(this.H - y - h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re ${fill && stroke ? "B" : fill ? "f" : "S"}`);
+  }
+  line(x1, y1, x2, y2, c, w = 0.5){ this.ops.push(`${this.col(c)} RG ${w} w ${x1.toFixed(2)} ${(this.H - y1).toFixed(2)} m ${x2.toFixed(2)} ${(this.H - y2).toFixed(2)} l S`); }
+  text(x, y, s, size = 10, bold = false, color = [20, 33, 43], align = "left"){
+    s = pdfSafe(s);
+    if (align !== "left") { const w = this.tw(s, size, bold); x = align === "right" ? x - w : x - w / 2; }
+    const e = s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+    this.ops.push(`BT /${bold ? "F2" : "F1"} ${size} Tf ${this.col(color)} rg ${x.toFixed(2)} ${(this.H - y).toFixed(2)} Td (${e}) Tj ET`);
+  }
+  wrap(s, size, bold, maxW){
+    const words = pdfSafe(s).split(/\s+/).filter(Boolean), lines = []; let cur = "";
+    for (const w of words) {
+      const t = cur ? cur + " " + w : w;
+      if (this.tw(t, size, bold) <= maxW) { cur = t; continue; }
+      if (cur) lines.push(cur);
+      if (this.tw(w, size, bold) > maxW) { let part = ""; for (const ch of w) { if (this.tw(part + ch, size, bold) > maxW) { lines.push(part); part = ch; } else part += ch; } cur = part; }
+      else cur = w;
+    }
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [""];
+  }
+  blob(){
+    const objs = [], n = this.pages.length;
+    objs[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+    objs[2] = `<< /Type /Pages /Kids [${this.pages.map((_, i) => `${5 + i * 2} 0 R`).join(" ")}] /Count ${n} >>`;
+    objs[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+    objs[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+    this.pages.forEach((ops, i) => {
+      const content = ops.join("\n");
+      objs[5 + i * 2] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${this.W} ${this.H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${6 + i * 2} 0 R >>`;
+      objs[6 + i * 2] = `<< /Length ${content.length} >>\nstream\n${content}\nendstream`;
+    });
+    let out = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"; const offs = [];
+    for (let i = 1; i < objs.length; i++) { offs[i] = out.length; out += `${i} 0 obj\n${objs[i]}\nendobj\n`; }
+    const xref = out.length;
+    out += `xref\n0 ${objs.length}\n0000000000 65535 f \n` + offs.slice(1).map(o => String(o).padStart(10, "0") + " 00000 n \n").join("");
+    out += `trailer\n<< /Size ${objs.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    const u8 = new Uint8Array(out.length); for (let i = 0; i < out.length; i++) u8[i] = out.charCodeAt(i) & 255;
+    return new Blob([u8], { type: "application/pdf" });
+  }
+}
+const PC = { done: [31, 138, 76], prog: [47, 111, 179], ns: [160, 172, 184], warn: [194, 65, 12], brand: [15, 61, 94], ink: [20, 33, 43], muted: [93, 107, 120], line: [226, 231, 236], white: [255, 255, 255] };
+const pColor = k => k === "COMPLETED" ? PC.done : k === "IN PROGRESS" ? PC.prog : PC.ns;
+
+function buildReport(){
+  const list = filtered(), c = counts(list), pdf = new PDF(), M = 36, W = pdf.W - 2 * M;
+  const extra = [S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.q && `Search "${S.f.q}"`].filter(Boolean).join("  |  ");
+  let y = 0;
+  const header = first => {
+    if (first) {
+      pdf.rect(0, 0, pdf.W, 84, PC.brand);
+      pdf.text(M, 34, "PD Rating Status Report", 20, true, PC.white);
+      pdf.text(M, 55, scopeLabel() + (extra ? "  |  " + extra : ""), 11, true, [214, 228, 240]);
+      pdf.text(M, 71, `Generated ${fdate(new Date(today()))}   |   Data as of ${fdate(latestUpd(S.all))}`, 9, false, [182, 204, 224]);
+      y = 104;
+    } else {
+      pdf.rect(0, 0, pdf.W, 36, PC.brand);
+      pdf.text(M, 23, "PD Rating Status Report  |  " + scopeLabel(), 10, true, PC.white);
+      y = 54;
+    }
+  };
+  const ensure = (h, onNew) => { if (y + h > pdf.H - 44) { pdf.add(); header(false); if (onNew) onNew(); } };
+  const bar = (x, yy, w, h, g) => {
+    pdf.rect(x, yy, w, h, [238, 241, 244]);
+    let cx = x;
+    for (const k of ["COMPLETED", "IN PROGRESS", "NOT STARTED"]) { const sw = g.total ? w * (g[k] || 0) / g.total : 0; if (sw > 0) { pdf.rect(cx, yy, sw, h, pColor(k)); cx += sw; } }
+  };
+  const section = t => { ensure(40); pdf.text(M, y + 12, t, 12.5, true, PC.ink); pdf.line(M, y + 18, M + W, y + 18, PC.line, 0.8); y += 28; };
+  const table = (cols, rows) => {
+    const drawHead = () => {
+      const lines = cols.map(cl => pdf.wrap(cl.h, 7.8, true, cl.w - 8));
+      const hh = Math.max(...lines.map(l => l.length)) * 9.5 + 9;
+      pdf.rect(M, y, W, hh, PC.brand);
+      let x = M;
+      cols.forEach((cl, i) => { lines[i].forEach((ln, j) => pdf.text(cl.al === "r" ? x + cl.w - 5 : x + 5, y + 12 + j * 9.5, ln, 7.8, true, PC.white, cl.al === "r" ? "right" : "left")); x += cl.w; });
+      y += hh;
+    };
+    ensure(70); drawHead();
+    rows.forEach((r, ri) => {
+      const cl = r.map((cell, i) => cell.bar ? [""] : pdf.wrap(cell.t, cell.size || 8.5, !!cell.bold, cols[i].w - 10));
+      const nl = Math.max(...cl.map((l, i) => l.length + (r[i].sub ? 1 : 0)));
+      const rh = nl * 11 + 9;
+      ensure(rh, drawHead);
+      if (r.hl) pdf.rect(M, y, W, rh, r.hl); else if (ri % 2) pdf.rect(M, y, W, rh, [247, 249, 251]);
+      let x = M;
+      r.forEach((cell, i) => {
+        const co = cols[i];
+        if (cell.bar) bar(x + 5, y + rh / 2 - 4, co.w - 10, 8, cell.bar);
+        else {
+          cl[i].forEach((ln, j) => pdf.text(co.al === "r" ? x + co.w - 5 : x + 5, y + 14 + j * 11, ln, cell.size || 8.5, !!cell.bold, cell.color || PC.ink, co.al === "r" ? "right" : "left"));
+          if (cell.sub) pdf.text(co.al === "r" ? x + co.w - 5 : x + 5, y + 14 + cl[i].length * 11, cell.sub, 7.2, false, cell.subColor || PC.muted, co.al === "r" ? "right" : "left");
+        }
+        x += co.w;
+      });
+      pdf.line(M, y + rh, M + W, y + rh, PC.line);
+      y += rh;
+    });
+    y += 16;
+  };
+
+  header(true);
+  // KPI boxes
+  const kp = [
+    ["TOTAL PROJECTS", fmt(c.total), `Avg. progress ${c.avg}%`, PC.brand],
+    ["COMPLETED", fmt(c["COMPLETED"]), `${pct(c["COMPLETED"], c.total)}% of total`, PC.done],
+    ["IN PROGRESS", fmt(c["IN PROGRESS"]), `${pct(c["IN PROGRESS"], c.total)}% of total`, PC.prog],
+    ["NOT STARTED", fmt(c["NOT STARTED"]), `${pct(c["NOT STARTED"], c.total)}% of total`, PC.muted],
+    [`NO UPDATE > ${S.staleDays} DAYS`, fmt(c.stale), "In-progress projects", PC.warn]
+  ];
+  const gap = 8, bw = (W - gap * 4) / 5;
+  kp.forEach((k, i) => {
+    const x = M + i * (bw + gap);
+    pdf.rect(x, y, bw, 60, [250, 251, 252], PC.line); pdf.rect(x, y, 3.5, 60, k[3]);
+    pdf.text(x + 10, y + 15, k[0], 6.8, true, PC.muted);
+    pdf.text(x + 10, y + 38, k[1], 19, true, k[3]);
+    pdf.text(x + 10, y + 52, k[2], 7.5, false, PC.muted);
+  });
+  y += 78;
+  // overall bar
+  section("Overall status");
+  bar(M, y, W, 14, c); y += 26;
+  let lx = M;
+  for (const s of STATUSES) {
+    const t = `${s.label}: ${fmt(c[s.k] || 0)} (${pct(c[s.k] || 0, c.total)}%)`;
+    pdf.rect(lx, y - 7, 8, 8, pColor(s.k)); pdf.text(lx + 12, y, t, 9, false, PC.ink); lx += 24 + pdf.tw(t, 9, false);
+  }
+  y += 24;
+
+  if (!S.f.piu) {
+    const by = S.f.ro ? "piu" : "ro", lab = by === "ro" ? "RO" : "PIU";
+    const gl = groupRows(list, by).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+    section(`Status by ${lab}${S.f.ro ? "  -  " + S.f.ro : ""}`);
+    const cols = [{ h: "#", w: 22 }, { h: `${lab} name`, w: 140 }, { h: "Status", w: 92 }, { h: "Total", w: 42, al: "r" }, { h: "Completed", w: 58, al: "r" }, { h: "In progress", w: 58, al: "r" }, { h: "Not started", w: 58, al: "r" }, { h: `No update > ${S.staleDays} days`, w: W - 470, al: "r" }];
+    table(cols, gl.map((g, i) => [
+      { t: String(i + 1), color: PC.muted }, { t: g.name, bold: true }, { bar: g }, { t: fmt(g.total), bold: true },
+      { t: fmt(g["COMPLETED"]), color: PC.done, bold: true, sub: pct(g["COMPLETED"], g.total) + "%" },
+      { t: fmt(g["IN PROGRESS"]), color: PC.prog, bold: true, sub: pct(g["IN PROGRESS"], g.total) + "%" },
+      { t: fmt(g["NOT STARTED"]), color: PC.muted, bold: true, sub: pct(g["NOT STARTED"], g.total) + "%" },
+      { t: fmt(g.stale), color: g.stale ? PC.warn : PC.muted, bold: !!g.stale }
+    ]));
+    ensure(20); pdf.text(M, y, "Project-wise details are included when a PIU is selected in the dashboard filters.", 8, false, PC.muted); y += 14;
+  } else {
+    section(`Project details  -  PIU ${S.f.piu}`);
+    const cols = [{ h: "#", w: 22 }, { h: "Project name", w: 190 }, { h: "UPN ID", w: 92 }, { h: "RO", w: 66 }, { h: "PIU", w: 55 }, { h: "Current status", w: W - 425 }];
+    table(cols, sortProjects(list).map((p, i) => {
+      const st = isStale(p);
+      return [{ t: String(i + 1), color: PC.muted }, { t: p.name, bold: true, color: PC.brand }, { t: p.upn, size: 8 }, { t: p.ro, size: 8 }, { t: p.piu, size: 8 },
+        { t: statusText(p).replace(" · ", " - "), bold: true, color: p.status === "NOT STARTED" ? PC.muted : pColor(p.status), sub: st ? `No update since ${fdate(p.upd).replace(/ \d{4}$/, "")}` : (p.upd ? `Updated ${fdate(p.upd)}` : ""), subColor: st ? PC.warn : PC.muted }];
+    }));
+  }
+  // footers
+  const n = pdf.pages.length;
+  pdf.pages.forEach((ops, i) => {
+    pdf.ops = ops;
+    pdf.line(M, pdf.H - 30, M + W, pdf.H - 30, PC.line);
+    pdf.text(M, pdf.H - 18, "PD Rating Status  |  " + appUrl(), 7.5, false, PC.muted);
+    pdf.text(M + W, pdf.H - 18, `Page ${i + 1} of ${n}`, 7.5, false, PC.muted, "right");
+  });
+  const name = `PD_Status_${scopeLabel().replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  return new File([pdf.blob()], name, { type: "application/pdf" });
+}
+function downloadFile(f){
+  const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
+async function sharePdf(){
+  const f = buildReport();
+  if (navigator.canShare && navigator.canShare({ files: [f] })) {
+    try { await navigator.share({ files: [f], title: f.name, text: `PD Rating Status - ${scopeLabel()}` }); return; }
+    catch (e) { if (e.name === "AbortError") return; }
+  }
+  downloadFile(f);
+  toast("PDF downloaded. In WhatsApp tap 📎 Attach → Document and pick it.", 5000);
+}
+
 let shareMode = "summary";
 function openShare(text){
   shareMode = text ? "project" : "summary";
-  $("#shareOpts").style.display = text ? "none" : "";
-  $("#shareText").value = text || summaryMsg();
+  $("#shareMenu").style.display = text ? "none" : "";
+  $("#shareTitle").textContent = text ? "Share project on WhatsApp" : "Share on WhatsApp";
+  $("#shareScope").innerHTML = `Report for: <b>${esc(scopeLabel())}</b>${S.f.piu ? " · includes project details" : ""}`;
+  $("#msgBox").hidden = !text;
+  if (text) $("#shareText").value = text;
   openModal("#mShare");
 }
+$("#optMsg").onclick = () => { $("#msgBox").hidden = false; $("#shareText").value = summaryMsg(); $("#msgBox").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
+$("#optPdfShare").onclick = () => sharePdf();
+$("#optPdfDl").onclick = () => { downloadFile(buildReport()); toast("PDF downloaded"); };
 ["#optBreak", "#optStale", "#optLink"].forEach(id => $(id).onchange = () => { if (shareMode === "summary") $("#shareText").value = summaryMsg(); });
 $("#btnWa").onclick = () => { window.open("https://wa.me/?text=" + encodeURIComponent($("#shareText").value), "_blank"); };
 $("#btnCopy").onclick = async () => {
@@ -525,6 +790,7 @@ $("#btnCopy").onclick = async () => {
   catch (e) { $("#shareText").select(); document.execCommand("copy"); toast("Copied."); }
 };
 $("#fab").onclick = () => { if (S.all.length) openShare(); };
+$("#btnPdf").onclick = () => { if (S.all.length) { downloadFile(buildReport()); toast("PDF downloaded"); } };
 
 /* ---------- Modals, toast ---------- */
 function openModal(id){ $(id).classList.add("on"); }
