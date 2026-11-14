@@ -160,6 +160,7 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
 .bigopt .ic svg{width:26px;height:26px;fill:#fff}
 .ic.wa{background:var(--wa)}.ic.pdf{background:#d93025}.ic.dl{background:var(--brand2);font-size:20px}
 .psub{display:none}
+.ptab .nw{white-space:nowrap}
 .grp .sm{display:none}
 @media(max-width:700px){
   .ptab{min-width:0;font-size:13px}
@@ -208,7 +209,7 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
     <button class="bigopt" id="optMsg"><span class="ic wa"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></span><span><b>Share status message</b><small>Text summary opens in WhatsApp</small></span></button>
     <button class="bigopt" id="optPdfShare"><span class="ic pdf">PDF</span><span><b>Share PDF report on WhatsApp</b><small>On your phone, choose WhatsApp in the share menu</small></span></button>
     <button class="bigopt" id="optPdfDl"><span class="ic dl">⬇</span><span><b>Download PDF report</b><small>Save the report to this device</small></span></button>
-    <div class="hint">The PDF covers the current filters. Project-wise details are included only when a PIU is selected.</div>
+    <div class="hint" id="pdfHint">The PDF covers the current filters. Project-wise details are included only when a PIU is selected.</div>
   </div>
   <div id="msgBox" hidden>
     <div class="seg" id="shareOpts">
@@ -256,7 +257,7 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
 
 <script>
 "use strict";
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.3.3";
 const DATA_FILE = "status.xlsx";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
@@ -512,7 +513,7 @@ function render(){
     </div>
     ${!S.showProj ? "" : list.length ? `
     <div class="tscroll"><table class="ptab">
-      <thead><tr><th class="idx">#</th><th>Project name</th><th class="c-upn">UPN ID</th><th class="c-ro">RO</th><th class="c-piu">PIU</th><th>Current status</th><th></th></tr></thead>
+      <thead><tr><th class="idx">#</th><th>Project name</th><th class="c-upn">UPN ID</th><th class="c-ro">RO</th><th class="c-piu">PIU</th><th>Current status</th></tr></thead>
       <tbody>${sorted.slice(0, S.shown).map((p, i) => projRow(p, i)).join("")}</tbody>
     </table></div>
     ${list.length > S.shown ? `<button class="btn more" id="btnMore">Show more (${fmt(list.length - S.shown)} left)</button>` : ""}` : `<div class="empty">No projects match these filters.</div>`}
@@ -526,12 +527,11 @@ function projRow(p, i){
     <td class="idx">${i + 1}</td>
     <td class="pname">${esc(p.name || "(no name)")}<div class="psub"><span>UPN ${esc(p.upn)}</span><span>${esc(p.ro)}</span><span>PIU ${esc(p.piu)}</span></div></td>
     <td class="mono c-upn">${esc(p.upn)}</td>
-    <td class="c-ro">${esc(p.ro)}</td>
-    <td class="c-piu">${esc(p.piu)}</td>
+    <td class="c-ro nw">${esc(p.ro)}</td>
+    <td class="c-piu nw">${esc(p.piu)}</td>
     <td><span class="badge ${s.cls}">${esc(statusText(p))}</span>
       ${p.prog != null && p.status !== "NOT STARTED" ? `<div class="mini"><i style="width:${p.prog}%;background:${s.c}"></i></div>` : ""}
-      ${st ? `<div class="stale">No update since ${fdate(p.upd)}</div>` : `<div class="upd">Updated ${fdate(p.upd)}</div>`}</td>
-    <td><button class="ibtn" data-share="${i}" title="Share this project on WhatsApp">${WA_SVG}</button></td>
+      ${st ? `<div class="stale">No update since ${fdate(p.upd)}</div>` : p.upd ? `<div class="upd">Updated ${fdate(p.upd)}</div>` : ""}</td>
   </tr>`;
 }
 function bind(sorted){
@@ -775,7 +775,7 @@ function openShare(text){
   shareMode = text ? "project" : "summary";
   $("#shareMenu").style.display = text ? "none" : "";
   $("#shareTitle").textContent = text ? "Share project on WhatsApp" : "Share on WhatsApp";
-  $("#shareScope").innerHTML = `Report for: <b>${esc(scopeLabel())}</b>${S.f.piu ? " · includes project details" : ""}`;
+  $("#shareScope").innerHTML = `Report for: <b>${esc(scopeLabel())}</b>${S.f.piu ? " · PDF includes project details" : ""}`;
   $("#msgBox").hidden = !text;
   if (text) $("#shareText").value = text;
   openModal("#mShare");
@@ -790,7 +790,7 @@ $("#btnCopy").onclick = async () => {
   catch (e) { $("#shareText").select(); document.execCommand("copy"); toast("Copied."); }
 };
 $("#fab").onclick = () => { if (S.all.length) openShare(); };
-$("#btnPdf").onclick = () => { if (S.all.length) { downloadFile(buildReport()); toast("PDF downloaded"); } };
+const bp = $("#btnPdf"); if (bp) bp.onclick = () => { if (S.all.length) { downloadFile(buildReport()); toast("PDF downloaded"); } };
 
 /* ---------- Modals, toast ---------- */
 function openModal(id){ $(id).classList.add("on"); }
