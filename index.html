@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PD Rating Status</title>
+<meta name="theme-color" content="#0f3d5e">
+<meta name="description" content="PD Rating project status dashboard">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PD Status">
+<style>
+:root{
+  --bg:#f3f5f8;--card:#fff;--ink:#14212b;--muted:#5d6b78;--line:#e2e7ec;
+  --brand:#0f3d5e;--brand2:#1c5d8a;
+  --done:#1f8a4c;--prog:#2f6fb3;--ns:#a0acb8;--warn:#c2410c;--wa:#1fa855;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;-webkit-text-size-adjust:100%}
+button,select,input{font:inherit;color:inherit}
+header{position:sticky;top:0;z-index:20;background:var(--brand);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .t{flex:1;min-width:0}
+header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.2px}
+header .sub{font-size:12px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbtn{background:rgba(255,255,255,.14);border:0;border-radius:10px;color:#fff;height:38px;min-width:38px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:14px;font-weight:600}
+.hbtn:hover{background:rgba(255,255,255,.24)}
+.hbtn.wa{background:var(--wa)}
+.hbtn svg{width:20px;height:20px;fill:currentColor}
+.hbtn .lbl{display:none}
+@media(min-width:640px){.hbtn .lbl{display:inline}}
+main{max-width:1100px;margin:0 auto;padding:12px 12px 90px}
+.banner{border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.banner.local{background:#fff7e6;border:1px solid #f5d9a6}
+.banner.err{background:#fdecec;border:1px solid #f3b8b8}
+.banner.ok{background:#e9f7ef;border:1px solid #b6e2c6}
+.banner .grow{flex:1;min-width:180px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600;font-size:14px}
+.btn.primary{background:var(--brand2);border-color:var(--brand2);color:#fff}
+.btn.wa{background:var(--wa);border-color:var(--wa);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.filters select,.filters input{width:100%;height:42px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 10px}
+.filters .search{grid-column:1/-1}
+@media(min-width:760px){.filters{grid-template-columns:1fr 1fr 2fr}.filters .search{grid-column:auto}}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip .dot{width:9px;height:9px;border-radius:50%}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.clear{color:var(--warn);border-color:#f1c9b4}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+@media(min-width:760px){.kpis{grid-template-columns:repeat(5,1fr)}}
+.kpi{background:var(--card);border-radius:var(--r);padding:12px;border:1px solid var(--line);cursor:pointer;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,var(--brand2))}
+.kpi .k{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.kpi .v{font-size:26px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .p{font-size:12px;color:var(--muted)}
+.kpi.total{grid-column:1/-1}
+@media(min-width:760px){.kpi.total{grid-column:auto}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.card h2 .note{font-weight:400;color:var(--muted);font-size:12px;margin-left:auto}
+.stack{display:flex;height:14px;border-radius:7px;overflow:hidden;background:#eef1f4}
+.stack i{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend b{width:10px;height:10px;border-radius:3px;display:inline-block}
+.grp{width:100%;border-collapse:collapse;font-size:13px}
+.grp th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:6px 4px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
+.grp td{padding:8px 4px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+.grp tr.row{cursor:pointer}
+.grp tr.row:hover td{background:#f7f9fb}
+.grp .nm{font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grp .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.grp .bar{width:38%;min-width:90px}
+.grp .hide-sm{display:none}
+@media(min-width:640px){.grp .hide-sm{display:table-cell}.grp .nm{max-width:260px}}
+.buckets{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;align-items:end;height:120px;margin-top:6px}
+.bk{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.bk .col{width:70%;background:var(--prog);border-radius:6px 6px 0 0;min-height:2px}
+.bk .cnt{font-size:12px;font-weight:700}
+.bk .lb{font-size:11px;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:8px}
+.proj{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.proj .top{display:flex;gap:8px;align-items:flex-start}
+.proj .nm{flex:1;font-weight:600;font-size:14px}
+.proj .meta{font-size:12px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.proj .pb{display:flex;align-items:center;gap:8px;margin-top:8px}
+.proj .pb .track{flex:1;height:8px;background:#eef1f4;border-radius:4px;overflow:hidden}
+.proj .pb .fill{height:100%;border-radius:4px}
+.proj .pb .pc{font-weight:700;font-size:13px;width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.badge{font-size:11px;font-weight:700;border-radius:999px;padding:3px 8px;white-space:nowrap}
+.b-done{background:#e3f4ea;color:var(--done)}
+.b-prog{background:#e6effa;color:var(--prog)}
+.b-ns{background:#eef1f4;color:#5d6b78}
+.b-stale{background:#fdeee6;color:var(--warn)}
+.ibtn{border:0;background:transparent;cursor:pointer;padding:4px;border-radius:8px;color:var(--wa);display:inline-flex}
+.ibtn svg{width:20px;height:20px;fill:currentColor}
+.more{display:block;margin:12px auto 0}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.foot{font-size:12px;color:var(--muted);text-align:center;margin-top:18px}
+.modal{position:fixed;inset:0;background:rgba(10,20,30,.45);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.modal.on{display:flex}
+.sheet{background:#fff;width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+@media(min-width:640px){.modal{align-items:center}.sheet{border-radius:18px}}
+.sheet h3{margin:0 0 10px;font-size:17px;display:flex;align-items:center}
+.sheet h3 .x{margin-left:auto;border:0;background:#eef1f4;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:18px}
+.sheet label{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}
+.sheet input[type=text],.sheet input[type=password],.sheet input[type=number],.sheet textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px}
+.sheet textarea{height:230px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;resize:vertical}
+.sheet .hint{font-size:12px;color:var(--muted);margin-top:4px}
+.sheet .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sheet .row .btn{flex:1}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg label{margin:0;font-weight:500;display:inline-flex;gap:5px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:13px;cursor:pointer}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#14212b;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.on{opacity:1}
+.loading{padding:60px 0;text-align:center;color:var(--muted)}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;border:0;border-radius:999px;background:var(--wa);color:#fff;height:54px;padding:0 18px;display:flex;align-items:center;gap:8px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
+.fab svg{width:24px;height:24px;fill:#fff}
+</style>
+</head>
+<body>
+<header>
+  <div class="t">
+    <h1>PD Rating Status</h1>
+    <div class="sub" id="asof">Loading…</div>
+  </div>
+  <button class="hbtn" id="btnUpload" title="Upload Excel"><svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-16-5 5h3v6h4V9h3l-5-5z"/></svg><span class="lbl">Upload Excel</span></button>
+  <button class="hbtn" id="btnSettings" title="Settings"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.4-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4l-.4 2.7a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.4 2.5-1c.5.4 1.1.7 1.7 1l.4 2.7h4l.4-2.7c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.4L19.4 13zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
+  <input type="file" id="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+</header>
+
+<main id="main">
+  <div id="banner"></div>
+  <div id="app"><div class="loading">Loading project data…</div></div>
+</main>
+
+<button class="fab" id="fab" title="Share on WhatsApp"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>Share</button>
+
+<div class="modal" id="mShare"><div class="sheet">
+  <h3>Share status on WhatsApp <button class="x" data-close>×</button></h3>
+  <div class="seg" id="shareOpts">
+    <label><input type="checkbox" id="optBreak" checked> Breakdown by RO / PIU</label>
+    <label><input type="checkbox" id="optStale" checked> Stale-update count</label>
+    <label><input type="checkbox" id="optLink" checked> Dashboard link</label>
+  </div>
+  <label for="shareText">Message (you can edit before sending)</label>
+  <textarea id="shareText"></textarea>
+  <div class="row">
+    <button class="btn" id="btnCopy">Copy text</button>
+    <button class="btn wa" id="btnWa">Open WhatsApp</button>
+  </div>
+  <div class="hint">WhatsApp opens with this message filled in. You pick the group or contact and press send.</div>
+</div></div>
+
+<div class="modal" id="mSettings"><div class="sheet">
+  <h3>Settings <button class="x" data-close>×</button></h3>
+  <label for="setStale">Flag "In progress" projects not updated for more than (days)</label>
+  <input type="number" id="setStale" min="1" max="365">
+  <label for="setToken">GitHub access token (only for the person who publishes)</label>
+  <input type="password" id="setToken" placeholder="github_pat_…" autocomplete="off">
+  <div class="hint">Lets this device publish a new Excel file so everyone sees it. Stored only on this device. Leave empty if you only view.</div>
+  <label for="setRepo">GitHub repository (owner/name)</label>
+  <input type="text" id="setRepo" placeholder="owner/pd-dashboard">
+  <div class="row">
+    <button class="btn" data-close>Cancel</button>
+    <button class="btn primary" id="btnSaveSet">Save</button>
+  </div>
+  <div class="hint" id="appVer"></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const APP_VERSION = "1.0.0";
+const DATA_FILE = "status.xlsx";
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem("pd_"+k, JSON.stringify(v)); }catch(e){} }
+};
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = n => n.toLocaleString("en-IN");
+const pct = (a,b) => b ? Math.round(a*100/b) : 0;
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fdate = d => d ? `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}` : "–";
+
+/* ---------- Minimal .xlsx reader (no external libraries) ---------- */
+async function inflateRaw(u8){
+  const s = new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+function unzip(buf){
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), td = new TextDecoder();
+  let e = -1;
+  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  }
+  if (e < 0) throw new Error("This is not a valid .xlsx file.");
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+  const files = {};
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+    const off = dv.getUint32(p + 42, true);
+    files[td.decode(u8.subarray(p + 46, p + 46 + nl))] = { method, csize, off };
+    p += 46 + nl + xl + cl;
+  }
+  return {
+    has: name => !!files[name],
+    async text(name){
+      const f = files[name]; if (!f) return null;
+      const start = f.off + 30 + dv.getUint16(f.off + 26, true) + dv.getUint16(f.off + 28, true);
+      const data = u8.subarray(start, start + f.csize);
+      return td.decode(f.method === 0 ? data : await inflateRaw(data));
+    }
+  };
+}
+const xml = t => new DOMParser().parseFromString(t, "application/xml");
+const tags = (node, name) => Array.from(node.getElementsByTagNameNS("*", name));
+const colIdx = ref => { let n = 0; for (const ch of ref.replace(/[0-9]/g, "")) n = n * 26 + (ch.charCodeAt(0) - 64); return n - 1; };
+
+async function readXlsx(buf){
+  const z = unzip(buf);
+  const shared = [];
+  const ss = await z.text("xl/sharedStrings.xml");
+  if (ss) for (const si of tags(xml(ss), "si")) shared.push(tags(si, "t").map(t => t.textContent).join(""));
+  // first worksheet
+  let sheetPath = "xl/worksheets/sheet1.xml";
+  const wb = await z.text("xl/workbook.xml"), rels = await z.text("xl/_rels/workbook.xml.rels");
+  if (wb && rels) {
+    const first = tags(xml(wb), "sheet")[0];
+    const rid = first && (first.getAttribute("r:id") || first.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
+    const rel = tags(xml(rels), "Relationship").find(r => r.getAttribute("Id") === rid);
+    if (rel) { const t = rel.getAttribute("Target"); sheetPath = t.startsWith("/") ? t.slice(1) : "xl/" + t.replace(/^\.\//, ""); }
+  }
+  const st = await z.text(sheetPath);
+  if (!st) throw new Error("Could not find a worksheet in this file.");
+  const rows = [];
+  for (const r of tags(xml(st), "row")) {
+    const arr = [];
+    for (const c of tags(r, "c")) {
+      const ref = c.getAttribute("r"), t = c.getAttribute("t");
+      const v = tags(c, "v")[0];
+      let val = null;
+      if (t === "s") val = v ? shared[+v.textContent] : "";
+      else if (t === "inlineStr") val = tags(c, "t").map(x => x.textContent).join("");
+      else if (t === "str" || t === "e") val = v ? v.textContent : "";
+      else if (t === "b") val = v ? v.textContent === "1" : false;
+      else val = v ? Number(v.textContent) : null;
+      arr[ref ? colIdx(ref) : arr.length] = val;
+    }
+    rows.push(arr);
+  }
+  return rows;
+}
+
+/* ---------- Turn sheet rows into projects ---------- */
+function parseDate(v){
+  if (v == null || v === "" || v === "-") return null;
+  if (typeof v === "number" && v > 20000 && v < 80000) return new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 864e5);
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);
+  if (m) return new Date(Date.UTC(+m[3], +m[2] - 1, +m[1]));
+  const d = new Date(s); return isNaN(d) ? null : new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+}
+function normStatus(s, prog){
+  const t = String(s || "").trim().toUpperCase().replace(/[_-]+/g, " ");
+  if (/COMPLET|DONE|CLOSED/.test(t)) return "COMPLETED";
+  if (/NOT\s*START|YET TO|PENDING/.test(t)) return "NOT STARTED";
+  if (/PROGRESS|ONGOING|WIP|STARTED/.test(t)) return "IN PROGRESS";
+  if (prog != null) return prog >= 100 ? "COMPLETED" : prog > 0 ? "IN PROGRESS" : "NOT STARTED";
+  return t || "NOT STARTED";
+}
+function toProjects(rows){
+  const want = {
+    upn: /upn|project\s*id|^id$/i, ro: /^ro$|regional/i, piu: /^piu/i,
+    name: /project\s*name|name of|^name$|description/i, prog: /progress|%/i,
+    status: /status/i, upd: /updated|update|date/i
+  };
+  let hi = -1, map = null;
+  for (let i = 0; i < Math.min(rows.length, 15); i++) {
+    const r = (rows[i] || []).map(x => String(x == null ? "" : x).trim());
+    const m = {};
+    for (const [k, re] of Object.entries(want)) { const j = r.findIndex((h, idx) => h && re.test(h) && !Object.values(m).includes(idx)); if (j >= 0) m[k] = j; }
+    if (m.status != null && (m.upn != null || m.name != null)) { hi = i; map = m; break; }
+  }
+  if (!map) throw new Error("Could not find the header row. The sheet needs columns like UPN ID, RO, PIU, Project Name, Progress (%), Status, Last Updated.");
+  const out = [];
+  let maxProg = 0;
+  for (let i = hi + 1; i < rows.length; i++) {
+    const r = rows[i] || [];
+    const g = k => map[k] != null ? r[map[k]] : null;
+    if (!g("upn") && !g("name")) continue;
+    let p = g("prog");
+    if (typeof p === "string") { const n = parseFloat(p.replace(/[^0-9.\-]/g, "")); p = isNaN(n) ? null : n; }
+    if (typeof p === "number" && p > maxProg) maxProg = p;
+    out.push({
+      upn: String(g("upn") ?? "").trim(), ro: String(g("ro") ?? "").trim() || "(No RO)",
+      piu: String(g("piu") ?? "").trim() || "(No PIU)", name: String(g("name") ?? "").trim(),
+      prog: p, rawStatus: g("status"), upd: parseDate(g("upd"))
+    });
+  }
+  const frac = maxProg > 0 && maxProg <= 1;
+  for (const o of out) {
+    if (frac && o.prog != null) o.prog = o.prog * 100;
+    if (o.prog != null) o.prog = Math.max(0, Math.min(100, Math.round(o.prog * 10) / 10));
+    o.status = normStatus(o.rawStatus, o.prog);
+    o.hay = (o.upn + " " + o.name + " " + o.ro + " " + o.piu).toLowerCase();
+  }
+  if (!out.length) throw new Error("No project rows found below the header.");
+  return out;
+}
+
+/* ---------- State ---------- */
+const S = {
+  all: [], source: "", fileDate: null, isLocal: false, localFile: null, localBuf: null,
+  f: { ro: "", piu: "", status: "", q: "", stale: false },
+  shown: 30, sortKey: "total", sortDir: -1,
+  staleDays: LS.get("staleDays", 15)
+};
+const STATUSES = [
+  { k: "COMPLETED", label: "Completed", c: "var(--done)", cls: "b-done", em: "✅" },
+  { k: "IN PROGRESS", label: "In progress", c: "var(--prog)", cls: "b-prog", em: "🔄" },
+  { k: "NOT STARTED", label: "Not started", c: "var(--ns)", cls: "b-ns", em: "⏳" }
+];
+const stInfo = k => STATUSES.find(s => s.k === k) || { k, label: k, c: "#888", cls: "b-ns", em: "•" };
+const today = () => { const d = new Date(); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); };
+const isStale = p => p.status === "IN PROGRESS" && (!p.upd || (today() - p.upd.getTime()) / 864e5 > S.staleDays);
+const latestUpd = list => list.reduce((m, p) => p.upd && (!m || p.upd > m) ? p.upd : m, null);
+
+function filtered(){
+  const { ro, piu, status, q, stale } = S.f, qq = q.trim().toLowerCase();
+  return S.all.filter(p => (!ro || p.ro === ro) && (!piu || p.piu === piu) && (!status || p.status === status)
+    && (!stale || isStale(p)) && (!qq || p.hay.includes(qq)));
+}
+function counts(list){
+  const c = { total: list.length, "COMPLETED": 0, "IN PROGRESS": 0, "NOT STARTED": 0, stale: 0, progSum: 0, progN: 0 };
+  for (const p of list) { c[p.status] = (c[p.status] || 0) + 1; if (isStale(p)) c.stale++; if (p.prog != null) { c.progSum += p.prog; c.progN++; } }
+  c.avg = c.progN ? Math.round(c.progSum / c.progN) : 0;
+  c.donePct = c.total ? c["COMPLETED"] / c.total : 0;
+  return c;
+}
+const uniq = (list, k) => Array.from(new Set(list.map(p => p[k]))).sort((a, b) => a.localeCompare(b));
+
+/* ---------- Rendering ---------- */
+function stackBar(c){
+  return `<div class="stack">${STATUSES.map(s => c[s.k] ? `<i style="width:${c[s.k] * 100 / c.total}%;background:${s.c}" title="${s.label}: ${c[s.k]}"></i>` : "").join("")}</div>`;
+}
+function render(){
+  const app = $("#app");
+  if (!S.all.length) return;
+  const base = S.all.filter(p => (!S.f.ro || p.ro === S.f.ro));
+  const list = filtered();
+  const c = counts(list);
+  const ros = uniq(S.all, "ro"), pius = uniq(base, "piu");
+  const groupBy = S.f.ro ? "piu" : "ro";
+  // group list ignores the status chip so the bars stay meaningful
+  const gsrc = S.all.filter(p => (!S.f.ro || p.ro === S.f.ro) && (!S.f.piu || p.piu === S.f.piu));
+  const groups = {};
+  for (const p of gsrc) (groups[p[groupBy]] ||= []).push(p);
+  let gl = Object.entries(groups).map(([name, ps]) => ({ name, ...counts(ps) }));
+  const sk = S.sortKey, sd = S.sortDir;
+  gl.sort((a, b) => sk === "name" ? sd * a.name.localeCompare(b.name) : (sd * ((a[sk] ?? 0) - (b[sk] ?? 0)) || a.name.localeCompare(b.name)));
+  const ar = k => S.sortKey === k ? (S.sortDir === -1 ? " ▼" : " ▲") : "";
+
+  // in-progress buckets
+  const ip = list.filter(p => p.status === "IN PROGRESS");
+  const bdef = [[0, 25, "0–25%"], [25, 50, "25–50%"], [50, 75, "50–75%"], [75, 90, "75–90%"], [90, 101, "90%+"]];
+  const bk = bdef.map(([a, b, l]) => ({ l, n: ip.filter(p => (p.prog ?? 0) >= a && (p.prog ?? 0) < b).length }));
+  const bmax = Math.max(1, ...bk.map(b => b.n));
+
+  const sorted = list.slice().sort((a, b) => (isStale(b) - isStale(a)) || ((b.upd ? 1 : 0) - (a.upd ? 1 : 0)) || ((a.upd && b.upd) ? a.upd - b.upd : 0) || a.name.localeCompare(b.name));
+  const anyFilter = S.f.ro || S.f.piu || S.f.status || S.f.q || S.f.stale;
+
+  app.innerHTML = `
+  <div class="filters">
+    <select id="fRo" aria-label="RO"><option value="">All ROs (${ros.length})</option>${ros.map(r => `<option ${r === S.f.ro ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
+    <select id="fPiu" aria-label="PIU"><option value="">All PIUs (${pius.length})</option>${pius.map(r => `<option ${r === S.f.piu ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
+    <input class="search" id="fQ" type="search" placeholder="Search UPN ID, project name, PIU…" value="${esc(S.f.q)}">
+  </div>
+  <div class="chips">
+    ${STATUSES.map(s => `<button class="chip ${S.f.status === s.k ? "on" : ""}" data-st="${s.k}"><span class="dot" style="background:${s.c}"></span>${s.label}</button>`).join("")}
+    <button class="chip ${S.f.stale ? "on" : ""}" id="chStale"><span class="dot" style="background:var(--warn)"></span>No update &gt; ${S.staleDays} days</button>
+    ${anyFilter ? `<button class="chip clear" id="chClear">Clear filters ×</button>` : ""}
+  </div>
+  <div class="kpis">
+    <div class="kpi total" style="--c:var(--brand2)" data-k=""><div class="k">Total projects</div><div class="v">${fmt(c.total)}</div><div class="p">Average progress ${c.avg}%</div></div>
+    ${STATUSES.map(s => `<div class="kpi" style="--c:${s.c}" data-k="${s.k}"><div class="k">${s.label}</div><div class="v">${fmt(c[s.k] || 0)}</div><div class="p">${pct(c[s.k] || 0, c.total)}% of total</div></div>`).join("")}
+    <div class="kpi" style="--c:var(--warn)" data-k="stale"><div class="k">No recent update</div><div class="v">${fmt(c.stale)}</div><div class="p">In progress, &gt; ${S.staleDays} days</div></div>
+  </div>
+  <div class="card">
+    <h2>Overall status<span class="note">${esc(S.f.piu || S.f.ro || "All ROs")}</span></h2>
+    ${c.total ? stackBar(c) : ""}
+    <div class="legend">${STATUSES.map(s => `<span><b style="background:${s.c}"></b>${s.label} ${pct(c[s.k] || 0, c.total)}%</span>`).join("")}</div>
+  </div>
+  ${S.f.piu ? "" : `
+  <div class="card">
+    <h2>By ${groupBy === "ro" ? "RO" : "PIU"}<span class="note">Tap a row to drill down</span></h2>
+    <table class="grp">
+      <thead><tr>
+        <th data-sort="name">${groupBy === "ro" ? "RO" : "PIU"}${ar("name")}</th>
+        <th class="n" data-sort="total">Total${ar("total")}</th>
+        <th class="bar">Status</th>
+        <th class="n" data-sort="donePct">✅${ar("donePct")}</th>
+        <th class="n hide-sm" data-sort="IN PROGRESS">🔄${ar("IN PROGRESS")}</th>
+        <th class="n hide-sm" data-sort="NOT STARTED">⏳${ar("NOT STARTED")}</th>
+        <th class="n" data-sort="stale">⚠️${ar("stale")}</th>
+      </tr></thead>
+      <tbody>${gl.map(g => `<tr class="row" data-g="${esc(g.name)}">
+        <td class="nm" title="${esc(g.name)}">${esc(g.name.replace(/^RO-/, ""))}</td>
+        <td class="n">${g.total}</td>
+        <td class="bar">${stackBar(g)}</td>
+        <td class="n">${pct(g["COMPLETED"], g.total)}%</td>
+        <td class="n hide-sm">${g["IN PROGRESS"]}</td>
+        <td class="n hide-sm">${g["NOT STARTED"]}</td>
+        <td class="n" style="color:${g.stale ? "var(--warn)" : "inherit"}">${g.stale}</td></tr>`).join("")}</tbody>
+    </table>
+    <div class="legend"><span>✅ % completed</span><span>🔄 in progress</span><span>⏳ not started</span><span>⚠️ in progress, no update &gt; ${S.staleDays} days</span></div>
+  </div>`}
+  <div class="card">
+    <h2>In-progress projects by progress<span class="note">${fmt(ip.length)} projects</span></h2>
+    <div class="buckets">${bk.map(b => `<div class="bk"><div class="cnt">${b.n}</div><div class="col" style="height:${b.n * 80 / bmax}%"></div><div class="lb">${b.l}</div></div>`).join("")}</div>
+  </div>
+  <div class="card" style="padding-bottom:6px">
+    <h2>Projects<span class="note">${fmt(list.length)} shown · oldest update first</span></h2>
+    ${list.length ? `<div class="list">${sorted.slice(0, S.shown).map(projHTML).join("")}</div>
+    ${list.length > S.shown ? `<button class="btn more" id="btnMore">Show more (${fmt(list.length - S.shown)} left)</button>` : ""}` : `<div class="empty">No projects match these filters.</div>`}
+  </div>
+  <div class="foot">Source: ${esc(S.source)} · Latest update in file: ${fdate(latestUpd(S.all))} · v${APP_VERSION}</div>`;
+  bind(sorted);
+}
+function projHTML(p, i){
+  const s = stInfo(p.status), st = isStale(p);
+  const pr = p.prog == null ? null : p.prog;
+  return `<div class="proj">
+    <div class="top"><div class="nm">${esc(p.name || "(no name)")}</div>
+      <button class="ibtn" data-share="${i}" title="Share this project on WhatsApp"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></button>
+    </div>
+    <div class="meta"><span>${esc(p.upn)}</span><span>${esc(p.ro)}</span><span>PIU ${esc(p.piu)}</span><span>Updated ${fdate(p.upd)}</span></div>
+    <div class="pb"><span class="badge ${s.cls}">${s.label}</span>${st ? `<span class="badge b-stale">No update &gt; ${S.staleDays}d</span>` : ""}
+      <div class="track"><div class="fill" style="width:${pr || 0}%;background:${s.c}"></div></div><span class="pc">${pr == null ? "–" : pr + "%"}</span></div>
+  </div>`;
+}
+function bind(sorted){
+  const set = (k, v) => { S.f[k] = v; S.shown = 30; render(); };
+  $("#fRo").onchange = e => { S.f.piu = ""; set("ro", e.target.value); };
+  $("#fPiu").onchange = e => set("piu", e.target.value);
+  let tmr; $("#fQ").oninput = e => { clearTimeout(tmr); tmr = setTimeout(() => { const pos = e.target.selectionStart; set("q", e.target.value); const q = $("#fQ"); q.focus(); try { q.setSelectionRange(pos, pos); } catch (_) {} }, 250); };
+  document.querySelectorAll("[data-st]").forEach(b => b.onclick = () => set("status", S.f.status === b.dataset.st ? "" : b.dataset.st));
+  $("#chStale").onclick = () => set("stale", !S.f.stale);
+  const cl = $("#chClear"); if (cl) cl.onclick = () => { S.f = { ro: "", piu: "", status: "", q: "", stale: false }; S.shown = 30; render(); };
+  document.querySelectorAll(".kpi").forEach(k => k.onclick = () => {
+    const v = k.dataset.k;
+    if (v === "stale") set("stale", !S.f.stale); else { S.f.stale = false; set("status", S.f.status === v ? "" : v); }
+  });
+  document.querySelectorAll("tr.row").forEach(r => r.onclick = () => { if (S.f.ro) set("piu", r.dataset.g); else { S.f.piu = ""; set("ro", r.dataset.g); } window.scrollTo({ top: 0, behavior: "smooth" }); });
+  document.querySelectorAll("th[data-sort]").forEach(h => h.onclick = () => { const k = h.dataset.sort; if (S.sortKey === k) S.sortDir *= -1; else { S.sortKey = k; S.sortDir = k === "name" ? 1 : -1; } render(); });
+  const m = $("#btnMore"); if (m) m.onclick = () => { S.shown += 50; render(); };
+  document.querySelectorAll("[data-share]").forEach(b => b.onclick = () => openShare(projectMsg(sorted[+b.dataset.share])));
+}
+
+/* ---------- WhatsApp ---------- */
+const appUrl = () => location.origin + location.pathname.replace(/index\.html$/, "");
+function summaryMsg(){
+  const list = filtered(), c = counts(list);
+  const scope = [S.f.ro, S.f.piu && "PIU " + S.f.piu, S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.q && `"${S.f.q}"`].filter(Boolean).join(" · ");
+  const L = [];
+  L.push(`*PD Rating Status – ${fdate(new Date(today()))}*`);
+  if (scope) L.push(`_${scope}_`);
+  L.push("");
+  L.push(`Total projects: *${fmt(c.total)}*`);
+  for (const s of STATUSES) L.push(`${s.em} ${s.label}: *${fmt(c[s.k] || 0)}* (${pct(c[s.k] || 0, c.total)}%)`);
+  L.push(`📈 Average progress: ${c.avg}%`);
+  if ($("#optStale").checked) L.push(`⚠️ In progress, no update > ${S.staleDays} days: *${fmt(c.stale)}*`);
+  if ($("#optBreak").checked && !S.f.piu) {
+    const by = S.f.ro ? "piu" : "ro", g = {};
+    for (const p of list) (g[p[by]] ||= []).push(p);
+    const rows = Object.entries(g).map(([n, ps]) => [n, counts(ps)]).sort((a, b) => b[1].total - a[1].total);
+    if (rows.length > 1 || S.f.ro) {
+      L.push(""); L.push(`*By ${by === "ro" ? "RO" : "PIU"}* (Total | ✅ | 🔄 | ⏳${$("#optStale").checked ? " | ⚠️" : ""})`);
+      for (const [n, k] of rows) L.push(`• ${n.replace(/^RO-/, "")}: ${k.total} | ${k["COMPLETED"]} | ${k["IN PROGRESS"]} | ${k["NOT STARTED"]}${$("#optStale").checked ? " | " + k.stale : ""}`);
+    }
+  }
+  L.push(""); L.push(`_Data as of ${fdate(latestUpd(S.all))}_`);
+  if ($("#optLink").checked) L.push(`Dashboard: ${appUrl()}`);
+  return L.join("\n");
+}
+function projectMsg(p){
+  const s = stInfo(p.status);
+  return [`*${p.name}*`, `UPN: ${p.upn}`, `${p.ro} · PIU ${p.piu}`, `${s.em} Status: *${s.label}*`, `📈 Progress: ${p.prog == null ? "–" : p.prog + "%"}`,
+    `🗓 Last updated: ${fdate(p.upd)}${isStale(p) ? ` ⚠️ (no update > ${S.staleDays} days)` : ""}`, "", `Dashboard: ${appUrl()}`].join("\n");
+}
+let shareMode = "summary";
+function openShare(text){
+  shareMode = text ? "project" : "summary";
+  $("#shareOpts").style.display = text ? "none" : "";
+  $("#shareText").value = text || summaryMsg();
+  openModal("#mShare");
+}
+["#optBreak", "#optStale", "#optLink"].forEach(id => $(id).onchange = () => { if (shareMode === "summary") $("#shareText").value = summaryMsg(); });
+$("#btnWa").onclick = () => { window.open("https://wa.me/?text=" + encodeURIComponent($("#shareText").value), "_blank"); };
+$("#btnCopy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("#shareText").value); toast("Copied. Paste it into WhatsApp."); }
+  catch (e) { $("#shareText").select(); document.execCommand("copy"); toast("Copied."); }
+};
+$("#fab").onclick = () => { if (S.all.length) openShare(); };
+
+/* ---------- Modals, toast ---------- */
+function openModal(id){ $(id).classList.add("on"); }
+document.querySelectorAll(".modal").forEach(m => {
+  m.addEventListener("click", e => { if (e.target === m || e.target.hasAttribute("data-close")) m.classList.remove("on"); });
+});
+let tt; function toast(t, ms = 2600){ const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => el.classList.remove("on"), ms); }
+
+/* ---------- Settings / publishing ---------- */
+function defaultRepo(){
+  const h = location.hostname.match(/^([^.]+)\.github\.io$/i);
+  const seg = location.pathname.split("/").filter(Boolean)[0];
+  return h && seg ? `${h[1]}/${seg}` : "";
+}
+$("#btnSettings").onclick = () => {
+  $("#setStale").value = S.staleDays; $("#setToken").value = LS.get("token", "");
+  $("#setRepo").value = LS.get("repo", "") || defaultRepo();
+  $("#appVer").textContent = `App version ${APP_VERSION}`;
+  openModal("#mSettings");
+};
+$("#btnSaveSet").onclick = () => {
+  const d = parseInt($("#setStale").value, 10); if (d > 0) { S.staleDays = d; LS.set("staleDays", d); }
+  LS.set("token", $("#setToken").value.trim()); LS.set("repo", $("#setRepo").value.trim());
+  $("#mSettings").classList.remove("on"); render(); banner(); toast("Settings saved");
+};
+function b64(buf){
+  const u8 = new Uint8Array(buf); let s = "";
+  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+async function publish(){
+  const token = LS.get("token", ""), repo = LS.get("repo", "") || defaultRepo();
+  if (!token || !repo) { toast("Add your GitHub token in Settings first."); $("#btnSettings").click(); return; }
+  const btn = $("#btnPub"); if (btn) { btn.disabled = true; btn.textContent = "Publishing…"; }
+  const api = `https://api.github.com/repos/${repo}/contents/${DATA_FILE}`;
+  const H = { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" };
+  try {
+    let sha;
+    const g = await fetch(api + "?ref=main&t=" + Date.now(), { headers: H, cache: "no-store" });
+    if (g.ok) sha = (await g.json()).sha; else if (g.status !== 404) throw new Error(`GitHub said ${g.status} while checking the current file. Check the token and repository name.`);
+    const r = await fetch(api, { method: "PUT", headers: H, body: JSON.stringify({
+      message: `Update status data (${S.localFile})`, content: b64(S.localBuf), branch: "main", ...(sha ? { sha } : {}) }) });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`GitHub said ${r.status}: ${j.message || "unknown error"}`); }
+    S.isLocal = false; S.source = `${S.localFile} (published)`;
+    banner("ok", "Published. Everyone opening the link will see this data within 1–2 minutes.");
+    render();
+  } catch (e) {
+    banner("err", "Publishing failed: " + e.message);
+  }
+}
+
+/* ---------- Banner ---------- */
+function banner(kind, msg){
+  const b = $("#banner");
+  if (kind) { b.innerHTML = `<div class="banner ${kind}"><div class="grow">${esc(msg)}</div><button class="btn" id="bx">OK</button></div>`; $("#bx").onclick = () => banner(); return; }
+  if (S.isLocal) {
+    const canPub = !!LS.get("token", "");
+    b.innerHTML = `<div class="banner local"><div class="grow"><b>Preview of ${esc(S.localFile)}</b> on this device only. Others still see the published data.</div>
+      <button class="btn" id="bRevert">Back to published</button>
+      <button class="btn primary" id="btnPub">${canPub ? "Publish for everyone" : "How to publish"}</button></div>`;
+    $("#bRevert").onclick = () => loadPublished();
+    $("#btnPub").onclick = () => canPub ? publish() : banner("ok", "To publish from this app: open Settings and paste a GitHub access token (see the README in the GitHub repository). Or upload the file on GitHub, named status.xlsx.");
+  } else b.innerHTML = "";
+}
+
+/* ---------- Loading ---------- */
+function setData(projects, source){
+  S.all = projects; S.source = source; S.shown = 30;
+  const lu = latestUpd(projects);
+  $("#asof").textContent = `${fmt(projects.length)} projects · data as of ${fdate(lu)}`;
+  if (S.f.ro && !projects.some(p => p.ro === S.f.ro)) S.f.ro = "";
+  if (S.f.piu && !projects.some(p => p.piu === S.f.piu)) S.f.piu = "";
+  render(); banner();
+}
+async function loadPublished(){
+  S.isLocal = false;
+  try {
+    const r = await fetch(DATA_FILE + "?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const buf = await r.arrayBuffer();
+    setData(toProjects(await readXlsx(buf)), DATA_FILE);
+  } catch (e) {
+    try {
+      const c = await caches.match(DATA_FILE, { ignoreSearch: true });
+      if (c) { setData(toProjects(await readXlsx(await c.arrayBuffer())), DATA_FILE + " (offline copy)"); toast("Offline: showing last saved data"); return; }
+    } catch (_) {}
+    $("#app").innerHTML = `<div class="empty">No published data yet (${esc(e.message)}).<br><br><button class="btn primary" onclick="document.getElementById('file').click()">Upload Excel file</button></div>`;
+    $("#asof").textContent = "No data loaded";
+  }
+}
+$("#btnUpload").onclick = () => $("#file").click();
+$("#file").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try {
+    const buf = await f.arrayBuffer();
+    const projects = toProjects(await readXlsx(buf));
+    S.isLocal = true; S.localFile = f.name; S.localBuf = buf;
+    setData(projects, f.name + " (preview)");
+    toast(`Loaded ${fmt(projects.length)} projects from ${f.name}`);
+  } catch (err) { banner("err", "Could not read that file: " + err.message); }
+};
+
+if (!("DecompressionStream" in window)) {
+  $("#app").innerHTML = `<div class="empty">This browser is too old to read Excel files. Please update Chrome or Safari.</div>`;
+} else loadPublished();
+
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+</script>
+</body>
+</html>
