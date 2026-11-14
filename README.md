@@ -9,6 +9,13 @@ It runs entirely on free GitHub Pages hosting, with no server and no outside lib
 - **Android (Chrome):** open the link → menu ⋮ → **Add to Home screen / Install app**.
 - **iPhone (Safari):** open the link → Share button → **Add to Home Screen**.
 
+## View-only link vs admin
+- The normal link is **view-only**: no Upload Excel and no Settings. Share this one.
+- To turn on admin buttons on **your own** device, open the link once with `#admin` at the end:
+  `https://manojkitecivil2017-bit.github.io/pd-dashboard/#admin`. Your device remembers it.
+- To turn them off again on a device, open it once with `#viewer` at the end.
+- Even if someone else turns admin on, they cannot change what others see without your GitHub token.
+
 ## Update the data (everyone sees it)
 **Option 1, on GitHub (no setup):**
 1. Rename your new Excel file to `status.xlsx`.

@@ -177,7 +177,7 @@ main{max-width:1100px;margin:0 auto;padding:12px 12px 90px}
 
 <script>
 "use strict";
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const DATA_FILE = "status.xlsx";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
@@ -599,7 +599,7 @@ async function loadPublished(){
       const c = await caches.match(DATA_FILE, { ignoreSearch: true });
       if (c) { setData(toProjects(await readXlsx(await c.arrayBuffer())), DATA_FILE + " (offline copy)"); toast("Offline: showing last saved data"); return; }
     } catch (_) {}
-    $("#app").innerHTML = `<div class="empty">No published data yet (${esc(e.message)}).<br><br><button class="btn primary" onclick="document.getElementById('file').click()">Upload Excel file</button></div>`;
+    $("#app").innerHTML = `<div class="empty">No published data yet (${esc(e.message)}).${$("#file") ? `<br><br><button class="btn primary" onclick="document.getElementById('file').click()">Upload Excel file</button>` : ""}</div>`;
     $("#asof").textContent = "No data loaded";
   }
 }
@@ -615,6 +615,18 @@ $("#file").onchange = async e => {
     toast(`Loaded ${fmt(projects.length)} projects from ${f.name}`);
   } catch (err) { banner("err", "Could not read that file: " + err.message); }
 };
+
+/* ---------- View-only for everyone except the admin device ----------
+   Admin mode is switched on for a device by opening the link once with #admin,
+   and switched off with #viewer. Shared links (and WhatsApp links) never carry it. */
+(function(){
+  if (location.hash === "#admin") LS.set("admin", true);
+  if (location.hash === "#viewer") LS.set("admin", false);
+  if (location.hash === "#admin" || location.hash === "#viewer") history.replaceState(null, "", location.pathname + location.search);
+  if (!LS.get("admin", false)) {
+    ["#btnUpload", "#btnSettings", "#file", "#mSettings"].forEach(s => { const el = $(s); if (el) el.remove(); });
+  }
+})();
 
 if (!("DecompressionStream" in window)) {
   $("#app").innerHTML = `<div class="empty">This browser is too old to read Excel files. Please update Chrome or Safari.</div>`;
