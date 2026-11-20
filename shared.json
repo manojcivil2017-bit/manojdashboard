@@ -4,8 +4,8 @@
     "date": "2026-11-20"
   },
   "nhidcl-dpr": {
-    "completed": 82,
-    "inProgress": null,
+    "completed": 0,
+    "inProgress": 82,
     "notStarted": null,
     "stale": 0,
     "avg": null,
