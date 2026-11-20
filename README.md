@@ -24,17 +24,19 @@ Direct links open one exercise, e.g. `…/pd-dashboard/#nhai-pd`, `#nhidcl-aeie`
 - Only a salted PBKDF2 hash of the admin password is stored in `index.html` (`ADMIN_LOGIN`).
 
 ## Update the data
-**From the app (admin):** Upload Excel → choose the exercise → choose the file → check the preview → **Publish for everyone**.
+**From the app (admin):** Upload Excel → choose the exercise → **Status file** → choose the file → check the preview → **Publish for everyone**.
 The app warns if a file looks like it belongs to a different exercise. Publishing needs a GitHub token in Settings (one-time):
 GitHub → Settings → Developer settings → Fine-grained tokens → repository `pd-dashboard`, permission **Contents: Read and write**.
 
 **On GitHub (no setup):** rename the Excel to the file name in the table above, then **Add file → Upload files** → Commit.
 
 ## Reviewed & Shared with field units
-- **NHAI PD Rating:** counted automatically. Upload the PD Rating progress tracker (tab **Master Project List**);
-  any project with something written in the **Tranche** column counts as reviewed & shared. Shown overall, by RO/PIU and per project.
-- **NHIDCL and MoRTH exercises:** admin enters the overall number: ⚙ Settings → **Update "Reviewed & Shared" numbers**
-  (or **✎ Edit number** on the purple card) → Publish for everyone. Saved in `shared.json` in this repository.
+- **From a review tracker (any exercise):** Upload Excel → choose the exercise → **Review tracker** → choose the tracker.
+  The app reads only the project ID (UPN/UPC) and **Tranche** columns (tab *Master Project List* if present).
+  Any project with something in Tranche counts as reviewed & shared. It is matched to the daily status file by project ID,
+  so progress data is never overwritten. Shown overall, by RO/PIU/PMU and per project. Saved as `<exercise>-review.json`.
+- **Typed in by admin (overall figure only):** ⚙ Settings → **Update "Reviewed & Shared" numbers** → Publish for everyone.
+  Saved in `shared.json`. Used for exercises that have no review tracker.
 
 ## Sharing and PDF reports
 - Green **Share status** button: WhatsApp text summary, share PDF (on a phone pick WhatsApp), or download PDF.

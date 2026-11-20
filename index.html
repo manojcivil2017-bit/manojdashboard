@@ -192,6 +192,13 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
   .grp td small{font-size:10px}
 }
 #msgBox{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+/* v2.2 upload type */
+#upType{display:grid;grid-template-columns:1fr;gap:8px}
+@media(min-width:520px){#upType{grid-template-columns:1fr 1fr}}
+.uptype{display:flex;gap:10px;align-items:flex-start;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px;cursor:pointer}
+.uptype .ic{font-size:22px;line-height:1}.uptype b{display:block;font-size:14px}.uptype small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.uptype.on{border-color:#6b3fa0;background:#f8f4fd}
+.banner.rv{background:#f4eefb;border-color:#e3d6f3}
 /* v2.1 reviewed & shared */
 @media(min-width:760px){.kpis{grid-template-columns:repeat(6,1fr)}}
 .kpi.shr{background:linear-gradient(135deg,#fff 60%,#f4eefb)}
@@ -312,7 +319,9 @@ header h1{font-size:18px;line-height:1.2}
   <h3>Upload Excel <button class="x" data-close>×</button></h3>
   <div class="step">Step 1 · Which rating exercise is this file for?</div>
   <div id="upEx"></div>
-  <div class="step">Step 2 · Choose the Excel file</div>
+  <div class="step">Step 2 · What are you uploading?</div>
+  <div id="upType"></div>
+  <div class="step">Step 3 · Choose the Excel file</div>
   <button class="btn primary" id="upPick" style="width:100%">Choose Excel file…</button>
   <div id="upMsg"></div>
   <div class="hint">The file is first shown as a preview on this device only. Then tap <b>Publish for everyone</b>.</div>
@@ -338,7 +347,7 @@ header h1{font-size:18px;line-height:1.2}
 
 <div class="modal" id="mShared"><div class="sheet">
   <h3>Reviewed &amp; Shared with field units <button class="x" data-close>×</button></h3>
-  <div class="hint" style="margin-top:0">Enter how many projects have been <b>reviewed and shared with field units</b> for each exercise, and the date of the figure. NHAI PD Rating is calculated automatically from the Tranche column of its Excel file.</div>
+  <div class="hint" style="margin-top:0">Enter how many projects have been <b>reviewed and shared with field units</b> for each exercise, and the date of the figure. Exercises with an uploaded <b>review tracker</b> (Upload Excel → Review tracker) are calculated automatically.</div>
   <div id="shList"></div>
   <div id="shMsg"></div>
   <div class="row">
@@ -361,7 +370,7 @@ header h1{font-size:18px;line-height:1.2}
 
 <script>
 "use strict";
-const APP_VERSION = "2.1.1";
+const APP_VERSION = "2.2.0";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem("pd_"+k, JSON.stringify(v)); }catch(e){} }
@@ -568,7 +577,7 @@ function bestOverlap(projects){
 
 /* ---------- State ---------- */
 const S = {
-  ex: null, D: {}, manual: {},
+  ex: null, D: {}, R: {}, manual: {},
   f: { l1: "", l2: "", status: "", q: "", stale: false, shared: false },
   shown: 30, showProj: false, sortKey: "total", sortDir: -1,
   staleDays: LS.get("staleDays", 15)
@@ -586,9 +595,47 @@ const EX = () => exById(S.ex);
 /* "Reviewed & Shared with field units": worked out from the Tranche column when the file has one,
    otherwise the overall figure the admin typed in (published in shared.json). */
 const SH_LABEL = "Reviewed & Shared", SH_FULL = "Reviewed & shared with field units", SH_COLOR = "#6b3fa0";
-const hasTranche = id => !!(S.D[id] && S.D[id].all && S.D[id].all.cols && S.D[id].all.cols.tranche);
+const hasTranche = id => { const a = S.D[id] && S.D[id].all; return !!(a && a.cols && (a.cols.tranche || a.reviewed)); };
+/* Review tracker: a separate Excel (UPN/UPC + Tranche) matched to the status file by project ID */
+const reviewFile = id => `${id}-review.json`;
+const upnKey = v => String(v == null ? "" : v).toUpperCase().replace(/\s+/g, "");
+const curReview = id => { const r = S.R[id]; return r ? (r.local || r.pub || null) : null; };
+function applyReview(id){
+  const d = S.D[id]; if (!d) return;
+  const rv = curReview(id);
+  for (const rows of new Set([d.all, d.pub].filter(Boolean))) {
+    if (rows.cols && rows.cols.tranche) continue;          // the status file has its own Tranche column
+    for (const p of rows) {
+      p.tranche = rv ? (rv.map[upnKey(p.upn)] || "") : "";
+      p.shared = !!p.tranche;
+      p.hay = (p.upn + " " + p.name + " " + p.ro + " " + p.unit + " " + p.tranche).toLowerCase();
+    }
+    rows.reviewed = !!rv;
+  }
+}
+async function parseTracker(buf){
+  const sheets = await readSheets(buf);
+  sheets.sort((a, b) => (/master\s*project/i.test(b.name) ? 1 : 0) - (/master\s*project/i.test(a.name) ? 1 : 0));
+  for (const sh of sheets) {
+    const rows = sh.rows;
+    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+      const h = (rows[i] || []).map(x => String(x == null ? "" : x).trim());
+      const ci = h.findIndex(x => /^upn|^upc|project\s*id|project\s*code/i.test(x)), ti = h.findIndex(x => /tranche/i.test(x));
+      if (ci < 0 || ti < 0) continue;
+      const map = {}; let total = 0;
+      for (let r = i + 1; r < rows.length; r++) {
+        const row = rows[r] || [], k = upnKey(row[ci]); if (!k) continue;
+        total++;
+        const t = String(row[ti] == null ? "" : row[ti]).trim();
+        if (t) map[k] = t;
+      }
+      return { map, total, sheet: sh.name };
+    }
+  }
+  throw new Error("Could not find a sheet with a project ID column (UPN/UPC) and a Tranche column.");
+}
 function sharedOf(id, list, overall){
-  if (hasTranche(id)) return { n: list.filter(p => p.shared).length, auto: true };
+  if (hasTranche(id)) { const a = S.D[id].all, rv = !a.cols.tranche && curReview(id); return { n: list.filter(p => p.shared).length, auto: true, asOf: rv ? rv.date : null }; }
   const m = S.manual[id];
   if (m && m.count != null && overall) return { n: +m.count, manual: true, asOf: m.date };
   if (m && m.count != null) return { overallOnly: true, n: +m.count, asOf: m.date };
@@ -744,13 +791,13 @@ function sharedKpi(ex, sh, c, auto, isAdmin){
   const v = sh && !sh.overallOnly ? fmt(sh.n) : "–";
   const sub = !sh ? "With field units · not entered yet"
     : sh.overallOnly ? `Overall figure only (${fmt(sh.n)}) · clear filters`
-    : sh.auto ? `With field units · ${pct(sh.n, c.total)}% of total`
+    : sh.auto ? `With field units · ${pct(sh.n, c.total)}% of total${sh.asOf ? " · tracker " + asOfTxt(sh.asOf) : ""}`
     : `With field units · ${pct(sh.n, c.total)}% · as of ${asOfTxt(sh.asOf)}`;
   return `<div class="kpi shr" style="--c:${SH_COLOR}" data-k="shared"><div class="k">${SH_LABEL}</div><div class="v" style="color:${SH_COLOR}">${v}</div><div class="p">${sub}</div>${isAdmin && !auto ? `<button class="kedit" id="editShared">✎ Edit number</button>` : ""}</div>`;
 }
 function sharedLine(id, all, c){
   const sh = sharedOf(id, all, true);
-  return `<div class="exshared"><span>📤 ${SH_FULL}</span><b>${sh ? fmt(sh.n) : "–"}</b><small>${sh ? pct(sh.n, c.total) + "% of total" + (sh.manual ? " · as of " + asOfTxt(sh.asOf) : "") : "Not entered yet"}</small></div>`;
+  return `<div class="exshared"><span>📤 ${SH_FULL}</span><b>${sh ? fmt(sh.n) : "–"}</b><small>${sh ? pct(sh.n, c.total) + "% of total" + (sh.asOf ? " · as of " + asOfTxt(sh.asOf) : "") : "Not entered yet"}</small></div>`;
 }
 function projRow(p, i, cols, ex, auto){
   const s = stInfo(p.status), st = isStale(p);
@@ -906,7 +953,7 @@ function overviewMsg(){
     L.push(`Total: *${fmt(c.total)}* | ✅ ${fmt(c["COMPLETED"])} (${pct(c["COMPLETED"], c.total)}%) | 🔄 ${fmt(c["IN PROGRESS"])} (${pct(c["IN PROGRESS"], c.total)}%) | ⏳ ${fmt(c["NOT STARTED"])} (${pct(c["NOT STARTED"], c.total)}%)`);
     if ($("#optStale").checked) L.push(`⚠️ In progress, no update > ${S.staleDays} days: ${fmt(c.stale)}`);
     const sh = sharedOf(ex.id, all, true);
-    if (sh) L.push(`📤 ${SH_FULL}: *${fmt(sh.n)}* (${pct(sh.n, c.total)}%)${sh.manual ? ` _as of ${asOfTxt(sh.asOf)}_` : ""}`);
+    if (sh) L.push(`📤 ${SH_FULL}: *${fmt(sh.n)}* (${pct(sh.n, c.total)}%)${sh.asOf ? ` _as of ${asOfTxt(sh.asOf)}_` : ""}`);
     L.push(`_Data as of ${fdate(latestUpd(all))}_`);
   }
   if ($("#optLink").checked) { L.push(""); L.push(`Dashboard: ${appUrl()}`); }
@@ -922,7 +969,7 @@ function summaryMsg(){
   for (const s of STATUSES) L.push(`${s.em} ${s.label}: *${fmt(c[s.k] || 0)}* (${pct(c[s.k] || 0, c.total)}%)`);
   L.push(`📈 Average progress: ${c.avg}%`);
   if ($("#optStale").checked) L.push(`⚠️ In progress, no update > ${S.staleDays} days: *${fmt(c.stale)}*`);
-  if (sh && !sh.overallOnly) L.push(`📤 ${SH_FULL}: *${fmt(sh.n)}* (${pct(sh.n, c.total)}%)${sh.manual ? ` _as of ${asOfTxt(sh.asOf)}_` : ""}`);
+  if (sh && !sh.overallOnly) L.push(`📤 ${SH_FULL}: *${fmt(sh.n)}* (${pct(sh.n, c.total)}%)${sh.asOf ? ` _as of ${asOfTxt(sh.asOf)}_` : ""}`);
   const G = groupLevel();
   if ($("#optBreak").checked && G) {
     const rows = groupRows(list, G[0]).sort((a, b) => b.total - a.total);
@@ -1165,7 +1212,7 @@ function openSharedEditor(){
     const auto = hasTranche(ex.id), total = rowsOf(ex.id).length, m = S.manual[ex.id] || {};
     return `<div class="shrow" style="--c:${ex.color}">
       <div><span class="orgtag">${ex.org}</span> <b>${esc(ex.name)}</b><small>${fmt(total)} projects in published data</small></div>
-      ${auto ? `<div class="shauto">Calculated automatically from the <b>Tranche</b> column: <b>${fmt(rowsOf(ex.id).filter(p => p.shared).length)}</b></div>`
+      ${auto ? `<div class="shauto">Calculated automatically ${rowsOf(ex.id).cols && rowsOf(ex.id).cols.tranche ? "from the <b>Tranche</b> column of the status file" : `from the review tracker${curReview(ex.id) ? " <b>" + esc(curReview(ex.id).source) + "</b>" : ""}`}: <b>${fmt(rowsOf(ex.id).filter(p => p.shared).length)}</b></div>`
         : `<div class="shin"><input type="number" min="0" ${total ? `max="${total}"` : ""} inputmode="numeric" data-shn="${ex.id}" value="${m.count ?? ""}" placeholder="Number"><input type="date" data-shd="${ex.id}" value="${m.date || today10}"></div>`}
     </div>`;
   }).join("");
@@ -1221,11 +1268,17 @@ async function publish(ex){
 }
 
 /* ---------- Upload (admin) ---------- */
-let upSel = null;
+let upSel = null, upType = "status";
 function openUpload(pre){
-  upSel = pre || S.ex || null;
+  upSel = pre || S.ex || null; upType = "status";
   $("#upMsg").innerHTML = "";
-  drawUpEx(); openModal("#mUpload");
+  drawUpEx(); drawUpType(); openModal("#mUpload");
+}
+function drawUpType(){
+  const T = [["status", "📊", "Status file", "Daily portal download: progress & status of each project"],
+             ["review", "📤", "Review tracker", "Your tracker with the Tranche column: updates only “Reviewed & Shared”, matched by project ID"]];
+  $("#upType").innerHTML = T.map(([k, ic, t, d]) => `<button class="uptype ${upType === k ? "on" : ""}" data-ut="${k}"><span class="ic">${ic}</span><span><b>${t}</b><small>${d}</small></span></button>`).join("");
+  document.querySelectorAll("[data-ut]").forEach(b => b.onclick = () => { upType = b.dataset.ut; $("#upMsg").innerHTML = ""; drawUpType(); });
 }
 function drawUpEx(){
   $("#upEx").innerHTML = EXERCISES.map(e => `<button class="upopt ${upSel === e.id ? "on" : ""}" data-ue="${e.id}" style="--c:${e.color}"><span class="orgtag">${e.org}</span><b>${esc(e.name)}</b><small>${e.idLabel} · ${e.levels.map(l => l[1]).join(" → ")}</small></button>`).join("");
@@ -1236,14 +1289,39 @@ $("#upPick").onclick = () => { if (!upSel) { $("#upMsg").innerHTML = `<div class
 function loadPreview(ex, projects, fname, buf){
   const d = S.D[ex.id] ||= {};
   Object.assign(d, { all: projects, isLocal: true, localFile: fname, localBuf: buf, source: fname + " (preview)", err: null });
+  applyReview(ex.id);
   $("#mUpload").classList.remove("on");
   toast(`Loaded ${fmt(projects.length)} projects into ${exTitle(ex)}`);
   if (S.ex === ex.id) render(); else go(ex.id);
+}
+function loadReviewPreview(ex, tr, fname){
+  const r = S.R[ex.id] ||= {};
+  r.local = { map: tr.map, source: fname, date: new Date(today()).toISOString().slice(0, 10), total: tr.total };
+  applyReview(ex.id);
+  $("#mUpload").classList.remove("on");
+  toast(`${fmt(Object.keys(tr.map).length)} projects marked Reviewed & Shared in ${exTitle(ex)}`);
+  if (S.ex === ex.id) render(); else go(ex.id);
+}
+async function handleReviewFile(ex, f, msg){
+  const tr = await parseTracker(await f.arrayBuffer());
+  const marked = Object.keys(tr.map).length, rows = rowsOf(ex.id);
+  const matched = rows.filter(p => tr.map[upnKey(p.upn)]).length;
+  const idsInStatus = new Set(rows.map(p => upnKey(p.upn)));
+  let allMatch = 0; for (const k of Object.keys(tr.map)) if (idsInStatus.has(k)) allMatch++;
+  const warns = [];
+  const g = guessEx(f.name); if (g && g !== ex.id) warns.push(`The file name "${f.name}" suggests ${exTitle(exById(g))}.`);
+  if (rows.length && marked && !matched) warns.push(`None of its ${fmt(marked)} reviewed projects match the ${exTitle(ex)} status data.`);
+  else if (marked && allMatch < marked) warns.push(`${fmt(marked - allMatch)} of its ${fmt(marked)} reviewed projects are not in the current ${exTitle(ex)} status file and will not be counted.`);
+  if (!warns.length) return loadReviewPreview(ex, tr, f.name);
+  msg.innerHTML = `<div class="banner err" style="display:block"><b>Please check:</b><ul>${warns.map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+    <div class="row"><button class="btn" data-close>Cancel</button><button class="btn primary" id="upRvGo">Continue</button></div></div>`;
+  $("#upRvGo").onclick = () => loadReviewPreview(ex, tr, f.name);
 }
 $("#file").onchange = async e => {
   const f = e.target.files[0]; e.target.value = "";
   if (!f || !upSel) return;
   const ex = exById(upSel), msg = $("#upMsg");
+  if (upType === "review") { try { await handleReviewFile(ex, f, msg); } catch (err) { msg.innerHTML = `<div class="banner err">Could not read that file: ${esc(err.message)}</div>`; } return; }
   try {
     const buf = await f.arrayBuffer();
     const projects = await readProjects(buf);
@@ -1264,17 +1342,31 @@ $("#file").onchange = async e => {
 function banner(kind, msg){
   const b = $("#banner");
   if (kind) { b.innerHTML = `<div class="banner ${kind}"><div class="grow">${esc(msg)}</div><button class="btn" id="bx">OK</button></div>`; $("#bx").onclick = () => banner(); return; }
-  const ex = EX(), d = ex && S.D[ex.id];
-  if (d && d.isLocal) {
-    const canPub = !!LS.get("token", "");
-    b.innerHTML = `<div class="banner local"><div class="grow"><b>Preview of ${esc(d.localFile)}</b> for <b>${esc(exTitle(ex))}</b>, on this device only. Others still see the published data.</div>
+  const ex = EX(), d = ex && S.D[ex.id], rv = ex && S.R[ex.id] && S.R[ex.id].local, canPub = !!LS.get("token", "");
+  let h = "";
+  if (d && d.isLocal) h += `<div class="banner local"><div class="grow"><b>📊 Status file preview: ${esc(d.localFile)}</b> for <b>${esc(exTitle(ex))}</b>, on this device only. Others still see the published data.</div>
       <button class="btn" id="bRevert">Back to published</button>
       <button class="btn primary" id="btnPub">${canPub ? "Publish for everyone" : "How to publish"}</button></div>`;
-    $("#bRevert").onclick = () => { if (d.pub) { Object.assign(d, { all: d.pub, isLocal: false, source: ex.file }); } else { Object.assign(d, { all: null, isLocal: false, err: "none" }); } render(); };
-    $("#btnPub").onclick = () => canPub ? publish(ex) : banner("ok", `To publish from this app: open Settings and paste a GitHub access token (see the README). Or upload the file on GitHub, renamed to ${ex.file}.`);
-  } else if (!ex && EXERCISES.some(e => S.D[e.id] && S.D[e.id].isLocal)) {
-    b.innerHTML = `<div class="banner local"><div class="grow">Some exercises show an unpublished <b>Preview</b>. Open them to publish or go back.</div></div>`;
-  } else b.innerHTML = "";
+  if (rv) h += `<div class="banner local rv"><div class="grow"><b>📤 Review tracker preview: ${esc(rv.source)}</b> for <b>${esc(exTitle(ex))}</b>: ${fmt(rowsOf(ex.id).filter(p => p.shared).length)} projects Reviewed &amp; Shared. On this device only.</div>
+      <button class="btn" id="rRevert">Back to published</button>
+      <button class="btn primary" id="rPub">${canPub ? "Publish for everyone" : "How to publish"}</button></div>`;
+  if (!ex && EXERCISES.some(e => (S.D[e.id] && S.D[e.id].isLocal) || (S.R[e.id] && S.R[e.id].local)))
+    h = `<div class="banner local"><div class="grow">Some exercises show an unpublished <b>Preview</b>. Open them to publish or go back.</div></div>`;
+  b.innerHTML = h;
+  const br = $("#bRevert"); if (br) br.onclick = () => { if (d.pub) { Object.assign(d, { all: d.pub, isLocal: false, source: ex.file }); } else { Object.assign(d, { all: null, isLocal: false, err: "none" }); } applyReview(ex.id); render(); };
+  const bp = $("#btnPub"); if (bp) bp.onclick = () => canPub ? publish(ex) : banner("ok", `To publish from this app: open Settings and paste a GitHub access token (see the README). Or upload the file on GitHub, renamed to ${ex.file}.`);
+  const rr = $("#rRevert"); if (rr) rr.onclick = () => { S.R[ex.id].local = null; applyReview(ex.id); render(); };
+  const rp = $("#rPub"); if (rp) rp.onclick = () => canPub ? publishReview(ex) : banner("ok", "To publish from this app: open Settings and paste a GitHub access token (see the README).");
+}
+async function publishReview(ex){
+  const r = S.R[ex.id], rv = r && r.local; if (!rv) return;
+  const btn = $("#rPub"); if (btn) { btn.disabled = true; btn.textContent = "Publishing…"; }
+  try {
+    const json = JSON.stringify({ source: rv.source, date: rv.date, total: rv.total, map: rv.map });
+    await putFile(reviewFile(ex.id), btoa(unescape(encodeURIComponent(json))), `Update ${ex.org} ${ex.name} review tracker (${rv.source})`);
+    r.pub = rv; r.local = null; applyReview(ex.id);
+    render(); banner("ok", `Review tracker published for ${exTitle(ex)}. Everyone will see Reviewed & Shared within 1–2 minutes.`);
+  } catch (e) { render(); banner("err", "Publishing failed: " + e.message); }
 }
 
 /* ---------- Loading ---------- */
@@ -1285,17 +1377,26 @@ async function loadOne(ex){
     if (!r.ok) throw new Error("HTTP " + r.status);
     const rows = await readProjects(await r.arrayBuffer());
     Object.assign(d, { all: rows, pub: rows, source: ex.file, err: null });
+    applyReview(ex.id);
   } catch (e) {
     try {
       const c = await caches.match(ex.file, { ignoreSearch: true });
-      if (c) { const rows = await readProjects(await c.arrayBuffer()); Object.assign(d, { all: rows, pub: rows, source: ex.file + " (offline copy)", err: null }); return; }
+      if (c) { const rows = await readProjects(await c.arrayBuffer()); Object.assign(d, { all: rows, pub: rows, source: ex.file + " (offline copy)", err: null }); applyReview(ex.id); return; }
     } catch (_) {}
     d.err = e.message;
   }
 }
+async function loadReview(ex){
+  const r = S.R[ex.id] ||= {};
+  let j = null;
+  try { const res = await fetch(reviewFile(ex.id) + "?t=" + Date.now(), { cache: "no-store" }); if (res.ok) j = await res.json(); }
+  catch (_) { try { const c = await caches.match(reviewFile(ex.id), { ignoreSearch: true }); if (c) j = await c.json(); } catch (__) {} }
+  r.pub = j && j.map ? j : null;
+  applyReview(ex.id);
+}
 async function loadAll(){
   route();
-  await Promise.all([loadManual(), ...EXERCISES.map(ex => loadOne(ex).then(() => { if (!S.ex || S.ex === ex.id) render(); }))]);
+  await Promise.all([loadManual(), ...EXERCISES.map(ex => Promise.all([loadOne(ex), loadReview(ex)]).then(() => { applyReview(ex.id); if (!S.ex || S.ex === ex.id) render(); }))]);
   render();
 }
 /* pick up a newer app version right away instead of waiting for the browser cache */
