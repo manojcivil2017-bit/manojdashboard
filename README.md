@@ -9,10 +9,11 @@ It runs entirely on free GitHub Pages hosting, with no server and no outside lib
 |---|---|---|
 | NHAI · PD Rating | `nhai-pd.xlsx` | RO → PIU |
 | NHIDCL · AE/IE Consultant Rating | `nhidcl-aeie.xlsx` | PMU |
+| NHIDCL · DPR Consultant Rating | *(no Excel: summary figures typed in by admin)* | – |
 | MoRTH · DPR Consultant Rating | `morth-dpr.xlsx` | RO |
 | MoRTH · AE/IE Consultant Rating | `morth-aeie.xlsx` | RO |
 
-Direct links open one exercise, e.g. `…/pd-dashboard/#nhai-pd`, `#nhidcl-aeie`, `#morth-dpr`, `#morth-aeie`.
+Direct links open one exercise, e.g. `…/pd-dashboard/#nhai-pd`, `#nhidcl-aeie`, `#nhidcl-dpr`, `#morth-dpr`, `#morth-aeie`.
 
 ## Install on a phone
 - **Android (Chrome):** open the link → menu ⋮ → **Add to Home screen / Install app**.
@@ -29,6 +30,11 @@ The app warns if a file looks like it belongs to a different exercise. Publishin
 GitHub → Settings → Developer settings → Fine-grained tokens → repository `pd-dashboard`, permission **Contents: Read and write**.
 
 **On GitHub (no setup):** rename the Excel to the file name in the table above, then **Add file → Upload files** → Commit.
+
+## NHIDCL · DPR Consultant Rating (summary figures only)
+No Excel file. Admin enters Completed, In progress, Not started, No update, Average progress, Reviewed & Shared and the date:
+⚙ Settings → **Update figures** (or **✎ Edit figures** on its page) → Publish for everyone. Saved in `shared.json`.
+It appears on the overview, in At a glance, as its own tab, in PDFs and in WhatsApp messages.
 
 ## Reviewed & Shared with field units
 - **From a review tracker (any exercise):** Upload Excel → choose the exercise → **Review tracker** → choose the tracker.

@@ -192,6 +192,13 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
   .grp td small{font-size:10px}
 }
 #msgBox{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+/* v2.3 summary-only exercise */
+.mtag{background:#e8f4f3;color:#0b6e69;border:1px solid #bfe0dd;border-radius:6px;font-size:11px;font-weight:700;padding:2px 7px}
+.mnote{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}.mnote>div{flex:1;min-width:220px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.mgrid label{margin:0;font-size:12px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.mgrid input{border:1px solid var(--line);border-radius:10px;padding:9px;font-size:15px;color:var(--ink);min-width:0}
+.mtot{color:var(--ink)}
 /* v2.2 upload type */
 #upType{display:grid;grid-template-columns:1fr;gap:8px}
 @media(min-width:520px){#upType{grid-template-columns:1fr 1fr}}
@@ -340,14 +347,14 @@ header h1{font-size:18px;line-height:1.2}
     <button class="btn" data-close>Cancel</button>
     <button class="btn primary" id="btnSaveSet">Save</button>
   </div>
-  <div class="row"><button class="btn" id="btnShEdit">📤 Update "Reviewed &amp; Shared" numbers</button></div>
+  <div class="row"><button class="btn" id="btnShEdit">✎ Update figures: Reviewed &amp; Shared, NHIDCL DPR</button></div>
   <div class="row"><button class="btn" id="btnLogout" style="color:var(--warn)">Log out of admin on this device</button></div>
   <div class="hint" id="appVer"></div>
 </div></div>
 
 <div class="modal" id="mShared"><div class="sheet">
-  <h3>Reviewed &amp; Shared with field units <button class="x" data-close>×</button></h3>
-  <div class="hint" style="margin-top:0">Enter how many projects have been <b>reviewed and shared with field units</b> for each exercise, and the date of the figure. Exercises with an uploaded <b>review tracker</b> (Upload Excel → Review tracker) are calculated automatically.</div>
+  <h3>Update figures (admin) <button class="x" data-close>×</button></h3>
+  <div class="hint" style="margin-top:0"><b>NHIDCL · DPR Consultant Rating:</b> enter all its summary figures. <b>Other exercises:</b> enter how many projects have been <b>reviewed and shared with field units</b> for each exercise, and the date of the figure. Exercises with an uploaded <b>review tracker</b> (Upload Excel → Review tracker) are calculated automatically.</div>
   <div id="shList"></div>
   <div id="shMsg"></div>
   <div class="row">
@@ -370,7 +377,7 @@ header h1{font-size:18px;line-height:1.2}
 
 <script>
 "use strict";
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "2.3.0";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem("pd_"+k, JSON.stringify(v)); }catch(e){} }
@@ -476,6 +483,8 @@ const EXERCISES = [
     idLabel: "UPN ID", levels: [["ro", "RO"], ["unit", "PIU"]], color: "#0f3d5e", color2: "#1f6aa0", rgb: [15, 61, 94] },
   { id: "nhidcl-aeie", org: "NHIDCL", orgFull: "National Highways & Infrastructure Development Corporation Ltd", name: "AE/IE Consultant Rating", file: "nhidcl-aeie.xlsx",
     idLabel: "UPN", levels: [["unit", "PMU"]], color: "#0b6e69", color2: "#16958e", rgb: [11, 110, 105] },
+  { id: "nhidcl-dpr", org: "NHIDCL", orgFull: "National Highways & Infrastructure Development Corporation Ltd", name: "DPR Consultant Rating", manual: true,
+    idLabel: "UPN", levels: [["unit", "PMU"]], color: "#0b6e69", color2: "#16958e", rgb: [11, 110, 105] },
   { id: "morth-dpr", org: "MoRTH", orgFull: "Ministry of Road Transport & Highways", name: "DPR Consultant Rating", file: "morth-dpr.xlsx",
     idLabel: "UPC", levels: [["ro", "RO"]], color: "#8a3a12", color2: "#b5541f", rgb: [138, 58, 18] },
   { id: "morth-aeie", org: "MoRTH", orgFull: "Ministry of Road Transport & Highways", name: "AE/IE Consultant Rating", file: "morth-aeie.xlsx",
@@ -485,7 +494,7 @@ const exById = id => EXERCISES.find(e => e.id === id);
 const exTitle = ex => `${ex.org} · ${ex.name}`;
 function guessEx(fname){
   const n = String(fname || "").toLowerCase();
-  if (/nhidcl/.test(n)) return "nhidcl-aeie";
+  if (/nhidcl/.test(n)) return /dpr/.test(n) ? null : "nhidcl-aeie";
   if (/morth/.test(n)) return /dpr/.test(n) ? "morth-dpr" : /ae.?ie/.test(n) ? "morth-aeie" : null;
   if (/nhai|pd[_ ]?rating/.test(n)) return "nhai-pd";
   return null;
@@ -592,6 +601,17 @@ const today = () => { const d = new Date(); return Date.UTC(d.getFullYear(), d.g
 const isStale = p => p.status === "IN PROGRESS" && (!p.upd || (today() - p.upd.getTime()) / 864e5 > S.staleDays);
 const latestUpd = list => list.reduce((m, p) => p.upd && (!m || p.upd > m) ? p.upd : m, null);
 const EX = () => exById(S.ex);
+/* Summary-only exercises (manual: true): every figure is typed in by the admin and kept in shared.json */
+const numOrNull = v => v === "" || v == null || isNaN(+v) ? null : +v;
+function manualCounts(id){
+  const m = S.manual[id];
+  if (!m || [m.completed, m.inProgress, m.notStarted].every(v => numOrNull(v) == null)) return null;
+  const C = numOrNull(m.completed) || 0, I = numOrNull(m.inProgress) || 0, N = numOrNull(m.notStarted) || 0, T = C + I + N;
+  return { total: T, "COMPLETED": C, "IN PROGRESS": I, "NOT STARTED": N, stale: numOrNull(m.stale), avg: numOrNull(m.avg), shared: numOrNull(m.count), donePct: T ? C / T : 0 };
+}
+const exCounts = ex => ex.manual ? manualCounts(ex.id) : (rowsOf(ex.id).length ? counts(rowsOf(ex.id)) : null);
+const exAsOf = ex => ex.manual ? (S.manual[ex.id] && S.manual[ex.id].date ? parseDate(S.manual[ex.id].date) : null) : latestUpd(rowsOf(ex.id));
+const nTxt = v => v == null ? "–" : fmt(v);
 /* "Reviewed & Shared with field units": worked out from the Tranche column when the file has one,
    otherwise the overall figure the admin typed in (published in shared.json). */
 const SH_LABEL = "Reviewed & Shared", SH_FULL = "Reviewed & shared with field units", SH_COLOR = "#6b3fa0";
@@ -689,8 +709,9 @@ function renderChrome(){
     hdr.style.background = `linear-gradient(135deg, ${ex.color} 0%, ${ex.color2} 100%)`;
     $("#hOrg").textContent = ex.orgFull;
     $("#hTitle").textContent = exTitle(ex);
-    const all = rowsOf(ex.id);
-    $("#asof").textContent = all.length ? `${fmt(all.length)} projects · data as of ${fdate(latestUpd(all))}` : "No data published yet";
+    const all = rowsOf(ex.id), mc = ex.manual && manualCounts(ex.id);
+    $("#asof").textContent = ex.manual ? (mc ? `${fmt(mc.total)} projects · summary figures as of ${fdate(exAsOf(ex))}` : "Summary figures not entered yet")
+      : all.length ? `${fmt(all.length)} projects · data as of ${fdate(latestUpd(all))}` : "No data published yet";
     document.title = `${exTitle(ex)} – Status`;
   } else {
     hdr.style.background = "";
@@ -708,6 +729,7 @@ function render(){
   renderChrome(); banner();
   if (!S.ex) return renderHome();
   const app = $("#app"), ex = EX(), d = S.D[ex.id] || {};
+  if (ex.manual) return renderManual(ex);
   if (!d.all) { app.innerHTML = `<div class="empty">${d.err ? "No data has been published for this exercise yet." : "Loading…"}${d.err && $("#btnUpload") ? `<br><br><button class="btn primary" id="emptyUp">Upload Excel for ${esc(exTitle(ex))}</button>` : ""}</div>`; const eu = $("#emptyUp"); if (eu) eu.onclick = () => openUpload(ex.id); return; }
   const L1 = lv(0), L2 = lv(1), all = d.all;
   const list = filtered(), c = counts(list);
@@ -813,25 +835,25 @@ function projRow(p, i, cols, ex, auto){
 }
 function renderHome(){
   const app = $("#app");
-  const rows = EXERCISES.map(ex => ({ ex, d: S.D[ex.id] || {}, c: counts(rowsOf(ex.id)) }));
-  const lu = rows.map(r => latestUpd(rowsOf(r.ex.id))).filter(Boolean).sort((a, b) => b - a)[0];
+  const rows = EXERCISES.map(ex => ({ ex, d: S.D[ex.id] || {}, c: exCounts(ex) }));
+  const lu = rows.map(r => exAsOf(r.ex)).filter(Boolean).sort((a, b) => b - a)[0];
   app.innerHTML = `
   <div class="hero"><b>${EXERCISES.length} ongoing rating exercises</b> across NHAI, NHIDCL and MoRTH. Each card is a separate exercise with its own data. Tap a card to open its dashboard.</div>
   <div class="excards">${rows.map(({ ex, d, c }) => `
     <button class="excard" data-go="${ex.id}" style="--c:${ex.color}">
-      <div class="exhead"><span class="orgtag">${ex.org}</span>${d.isLocal ? `<span class="prevtag">Preview</span>` : ""}</div>
+      <div class="exhead"><span class="orgtag">${ex.org}</span>${d.isLocal ? `<span class="prevtag">Preview</span>` : ex.manual ? `<span class="mtag">Summary figures</span>` : ""}</div>
       <div class="exname">${esc(ex.name)}</div>
       <div class="exorg">${esc(ex.orgFull)}</div>
-      ${d.all ? `
-      <div class="extotal"><b>${fmt(c.total)}</b> projects <span>· by ${ex.levels.map(l => l[1]).join(" → ")}</span></div>
+      ${c ? `
+      <div class="extotal"><b>${fmt(c.total)}</b> projects <span>· ${ex.manual ? "entered by admin" : "by " + ex.levels.map(l => l[1]).join(" → ")}</span></div>
       ${stackBar(c)}
       <div class="exstats">
         ${STATUSES.map(s => `<div><i style="background:${s.c}"></i><b>${fmt(c[s.k] || 0)}</b><small>${s.label} · ${pct(c[s.k] || 0, c.total)}%</small></div>`).join("")}
       </div>
       ${sharedLine(ex.id, d.all, c)}
-      <div class="exfoot"><span class="${c.stale ? "warnt" : ""}">⚠ ${fmt(c.stale)} in progress, no update &gt; ${S.staleDays}d</span><span>Data as of ${fdate(latestUpd(d.all))}</span></div>`
-      : `<div class="exempty">${d.err ? "No data published yet" : "Loading…"}</div>`}
-      <div class="exopen">Open dashboard ›</div>
+      <div class="exfoot"><span class="${c.stale ? "warnt" : ""}">⚠ ${nTxt(c.stale)} in progress, no update &gt; ${S.staleDays}d</span><span>${ex.manual ? "Figures" : "Data"} as of ${fdate(exAsOf(ex))}</span></div>`
+      : `<div class="exempty">${ex.manual ? "Figures not entered yet" : d.err ? "No data published yet" : "Loading…"}</div>`}
+      <div class="exopen">${ex.manual ? "Open summary ›" : "Open dashboard ›"}</div>
     </button>`).join("")}
   </div>
   <div class="card">
@@ -839,18 +861,43 @@ function renderHome(){
     <div class="tscroll"><table class="grp cmp">
       <thead><tr><th>Rating exercise</th><th class="n">Total</th><th class="n">Completed</th><th class="n"><span class="lg">In progress</span><span class="sm">In prog.</span></th><th class="n">Not started</th><th class="n"><span class="lg">No update<br>&gt; ${S.staleDays}d</span><span class="sm">No upd. &gt;${S.staleDays}d</span></th><th class="n" style="color:${SH_COLOR}"><span class="lg">Reviewed &amp;<br>Shared</span><span class="sm">Rev. &amp; shared</span></th></tr></thead>
       <tbody>${rows.map(({ ex, d, c }) => `<tr class="row" data-go="${ex.id}">
-        <td class="nm"><div class="gname" style="color:${ex.color}"><span class="orgtag sm" style="--c:${ex.color}">${ex.org}</span> ${esc(ex.name)} ›</div>${d.all ? stackBar(c) : ""}</td>
-        ${d.all ? `<td class="n"><b>${fmt(c.total)}</b></td>
+        <td class="nm"><div class="gname" style="color:${ex.color}"><span class="orgtag sm" style="--c:${ex.color}">${ex.org}</span> ${esc(ex.name)} ›</div>${c ? stackBar(c) : ""}</td>
+        ${c ? `<td class="n"><b>${fmt(c.total)}</b></td>
         <td class="n c-done">${fmt(c["COMPLETED"])}<small>${pct(c["COMPLETED"], c.total)}%</small></td>
         <td class="n c-prog">${fmt(c["IN PROGRESS"])}<small>${pct(c["IN PROGRESS"], c.total)}%</small></td>
         <td class="n c-ns">${fmt(c["NOT STARTED"])}<small>${pct(c["NOT STARTED"], c.total)}%</small></td>
-        <td class="n" style="color:${c.stale ? "var(--warn)" : "var(--muted)"};font-weight:700">${fmt(c.stale)}</td>
-        <td class="n" style="color:${SH_COLOR};font-weight:700">${(sh => sh ? fmt(sh.n) + `<small>${pct(sh.n, c.total)}%</small>` : `<span style="color:var(--muted);font-weight:400">–</span>`)(sharedOf(ex.id, d.all, true))}</td>` : `<td class="n" colspan="6" style="color:var(--muted)">No data</td>`}
+        <td class="n" style="color:${c.stale ? "var(--warn)" : "var(--muted)"};font-weight:700">${nTxt(c.stale)}</td>
+        <td class="n" style="color:${SH_COLOR};font-weight:700">${(sh => sh ? fmt(sh.n) + `<small>${pct(sh.n, c.total)}%</small>` : `<span style="color:var(--muted);font-weight:400">–</span>`)(sharedOf(ex.id, d.all || [], true))}</td>` : `<td class="n" colspan="6" style="color:var(--muted)">${ex.manual ? "Not entered yet" : "No data"}</td>`}
       </tr>`).join("")}</tbody>
     </table></div>
   </div>
   <div class="foot">Latest update across exercises: ${fdate(lu)} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
   document.querySelectorAll("#app [data-go]").forEach(b => b.onclick = () => go(b.dataset.go));
+  bindLogin();
+}
+function renderManual(ex){
+  const app = $("#app"), c = manualCounts(ex.id), isAdmin = !!$("#btnUpload"), sh = sharedOf(ex.id, [], true);
+  const editBtn = isAdmin ? `<button class="btn primary" id="editManual" style="background:${ex.color};border-color:${ex.color}">✎ ${c ? "Edit" : "Enter"} figures</button>` : "";
+  app.innerHTML = `
+  <div class="ctx" style="--c:${ex.color}"><span class="orgtag">${ex.org}</span><span><b>${esc(ex.name)}</b> · ${esc(ex.orgFull)}</span></div>
+  ${c ? `
+  <div class="scopebar">Summary figures entered by admin · as of <b>${fdate(exAsOf(ex))}</b></div>
+  <div class="kpis">
+    <div class="kpi total" style="--c:${ex.color}"><div class="k">Total projects</div><div class="v">${fmt(c.total)}</div><div class="p">${c.avg != null ? "Average progress " + c.avg + "%" : "Completed + in progress + not started"}</div></div>
+    ${STATUSES.map(s => `<div class="kpi" style="--c:${s.c}"><div class="k">${s.label}</div><div class="v" style="color:${s.c === "var(--ns)" ? "#5d6b78" : s.c}">${fmt(c[s.k] || 0)}</div><div class="p">${pct(c[s.k] || 0, c.total)}% of total</div></div>`).join("")}
+    <div class="kpi" style="--c:var(--warn)"><div class="k">No recent update</div><div class="v" style="color:var(--warn)">${nTxt(c.stale)}</div><div class="p">In progress, &gt; ${S.staleDays} days</div></div>
+    ${sharedKpi(ex, sh, c, false, isAdmin)}
+  </div>
+  <div class="card">
+    <h2>Overall status<span class="note">All PMUs</span></h2>
+    ${c.total ? stackBar(c) : ""}
+    <div class="legend">${STATUSES.map(s => `<span><b style="background:${s.c}"></b>${s.label} ${fmt(c[s.k] || 0)} (${pct(c[s.k] || 0, c.total)}%)</span>`).join("")}</div>
+  </div>
+  <div class="card mnote"><div>ℹ️ This exercise shows <b>summary figures only</b>, updated manually by the admin. PMU-wise and project-wise details are not available.</div>${editBtn}</div>`
+  : `<div class="empty">No figures have been entered for ${esc(exTitle(ex))} yet.${isAdmin ? "" : "<br>They will appear here once the admin enters them."}<br><br>${editBtn}</div>`}
+  <div class="foot">${esc(exTitle(ex))} · Summary figures · v${APP_VERSION} · ${isAdmin ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
+  const em = $("#editManual"); if (em) em.onclick = () => openSharedEditor(ex.id);
+  const es = $("#editShared"); if (es) es.onclick = ev => { ev.stopPropagation(); openSharedEditor(ex.id); };
   bindLogin();
 }
 function bindLogin(){
@@ -948,19 +995,34 @@ function overviewMsg(){
   for (const ex of EXERCISES) {
     const all = rowsOf(ex.id); L.push("");
     L.push(`*${ex.org} – ${ex.name}*`);
-    if (!all.length) { L.push("No data published yet"); continue; }
-    const c = counts(all);
+    const c = exCounts(ex);
+    if (!c) { L.push(ex.manual ? "Figures not entered yet" : "No data published yet"); continue; }
     L.push(`Total: *${fmt(c.total)}* | ✅ ${fmt(c["COMPLETED"])} (${pct(c["COMPLETED"], c.total)}%) | 🔄 ${fmt(c["IN PROGRESS"])} (${pct(c["IN PROGRESS"], c.total)}%) | ⏳ ${fmt(c["NOT STARTED"])} (${pct(c["NOT STARTED"], c.total)}%)`);
-    if ($("#optStale").checked) L.push(`⚠️ In progress, no update > ${S.staleDays} days: ${fmt(c.stale)}`);
+    if ($("#optStale").checked && c.stale != null) L.push(`⚠️ In progress, no update > ${S.staleDays} days: ${fmt(c.stale)}`);
     const sh = sharedOf(ex.id, all, true);
     if (sh) L.push(`📤 ${SH_FULL}: *${fmt(sh.n)}* (${pct(sh.n, c.total)}%)${sh.asOf ? ` _as of ${asOfTxt(sh.asOf)}_` : ""}`);
-    L.push(`_Data as of ${fdate(latestUpd(all))}_`);
+    L.push(`_${ex.manual ? "Figures" : "Data"} as of ${fdate(exAsOf(ex))}_`);
   }
   if ($("#optLink").checked) { L.push(""); L.push(`Dashboard: ${appUrl()}`); }
   return L.join("\n");
 }
 function summaryMsg(){
   if (!S.ex) return overviewMsg();
+  if (EX().manual) {
+    const ex = EX(), c = manualCounts(ex.id), sh = sharedOf(ex.id, [], true);
+    const L = [`*${ex.org} – ${ex.name}*`, `*Status as of ${fdate(new Date(today()))}*`, ""];
+    if (!c) L.push("Figures not entered yet");
+    else {
+      L.push(`Total projects: *${fmt(c.total)}*`);
+      for (const s of STATUSES) L.push(`${s.em} ${s.label}: *${fmt(c[s.k] || 0)}* (${pct(c[s.k] || 0, c.total)}%)`);
+      if (c.avg != null) L.push(`📈 Average progress: ${c.avg}%`);
+      if ($("#optStale").checked && c.stale != null) L.push(`⚠️ In progress, no update > ${S.staleDays} days: *${fmt(c.stale)}*`);
+      if (sh) L.push(`📤 ${SH_FULL}: *${fmt(sh.n)}* (${pct(sh.n, c.total)}%)`);
+      L.push(""); L.push(`_Figures as of ${fdate(exAsOf(ex))}_`);
+    }
+    if ($("#optLink").checked) L.push(`Dashboard: ${exUrl(ex)}`);
+    return L.join("\n");
+  }
   const ex = EX(), list = filtered(), c = counts(list);
   const scope = [scopeLabel(), S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.shared && SH_LABEL, S.f.q && `"${S.f.q}"`].filter(Boolean).join(" · ");
   const anyF = S.f.l1 || S.f.l2 || S.f.status || S.f.q || S.f.stale || S.f.shared, sh = sharedOf(ex.id, list, !anyF), auto = hasTranche(ex.id);
@@ -1003,9 +1065,9 @@ function pdfKit(title, sub, brand){
   };
   K.section = (t, color) => { K.ensure(40); pdf.text(M, K.y + 12, t, 12.5, true, color || PC.ink); pdf.line(M, K.y + 18, M + W, K.y + 18, PC.line, 0.8); K.y += 28; };
   K.kpis = (c, color) => {
-    const kp = [["TOTAL PROJECTS", fmt(c.total), `Avg. progress ${c.avg}%`, color], ["COMPLETED", fmt(c["COMPLETED"]), `${pct(c["COMPLETED"], c.total)}% of total`, PC.done],
+    const kp = [["TOTAL PROJECTS", fmt(c.total), c.avg == null ? "Completed + in progress + not started" : `Avg. progress ${c.avg}%`, color], ["COMPLETED", fmt(c["COMPLETED"]), `${pct(c["COMPLETED"], c.total)}% of total`, PC.done],
       ["IN PROGRESS", fmt(c["IN PROGRESS"]), `${pct(c["IN PROGRESS"], c.total)}% of total`, PC.prog], ["NOT STARTED", fmt(c["NOT STARTED"]), `${pct(c["NOT STARTED"], c.total)}% of total`, PC.muted],
-      [`NO UPDATE > ${S.staleDays} DAYS`, fmt(c.stale), "In-progress projects", PC.warn]];
+      [`NO UPDATE > ${S.staleDays} DAYS`, c.stale == null ? "-" : fmt(c.stale), "In-progress projects", PC.warn]];
     const gap = 8, bw = (W - gap * 4) / 5;
     K.ensure(70);
     kp.forEach((k, i) => { const x = M + i * (bw + gap); pdf.rect(x, K.y, bw, 60, [250, 251, 252], PC.line); pdf.rect(x, K.y, 3.5, 60, k[3]);
@@ -1050,7 +1112,7 @@ function pdfKit(title, sub, brand){
     { t: fmt(c["COMPLETED"]), color: PC.done, bold: true, sub: pct(c["COMPLETED"], c.total) + "%" },
     { t: fmt(c["IN PROGRESS"]), color: PC.prog, bold: true, sub: pct(c["IN PROGRESS"], c.total) + "%" },
     { t: fmt(c["NOT STARTED"]), color: PC.muted, bold: true, sub: pct(c["NOT STARTED"], c.total) + "%" },
-    { t: fmt(c.stale), color: c.stale ? PC.warn : PC.muted, bold: !!c.stale }];
+    { t: c.stale == null ? "-" : fmt(c.stale), color: c.stale ? PC.warn : PC.muted, bold: !!c.stale }];
   K.fit = cols => { const used = cols.slice(0, -1).reduce((a, c) => a + c.w, 0); cols[cols.length - 1].w = W - used; return cols; };
   K.sharedBanner = (sh, total) => {
     if (!sh) return;
@@ -1073,16 +1135,15 @@ function buildOverviewReport(){
   K.header(true);
   K.section("At a glance - each row is a separate rating exercise");
   const cols = K.fit([{ h: "Organisation", w: 60 }, { h: "Rating exercise", w: 116 }, { h: "Status", w: 66 }, { h: "Total", w: 40, al: "r" }, { h: "Completed", w: 50, al: "r" }, { h: "In progress", w: 50, al: "r" }, { h: "Not started", w: 50, al: "r" }, { h: `No update > ${S.staleDays} days`, w: 46, al: "r" }, { h: "Reviewed & Shared", w: 0, al: "r" }]);
-  K.table(cols, EXERCISES.filter(ex => rowsOf(ex.id).length).map(ex => { const all = rowsOf(ex.id), c = counts(all), sh = sharedOf(ex.id, all, true);
-    return [{ t: ex.org, bold: true, color: ex.rgb }, { t: ex.name, bold: true, sub: `Data as of ${fdate(latestUpd(all))}` }, { bar: c }, { t: fmt(c.total), bold: true }, ...K.statusCols(c),
+  K.table(cols, EXERCISES.filter(ex => exCounts(ex)).map(ex => { const all = rowsOf(ex.id), c = exCounts(ex), sh = sharedOf(ex.id, all, true);
+    return [{ t: ex.org, bold: true, color: ex.rgb }, { t: ex.name, bold: true, sub: `${ex.manual ? "Figures" : "Data"} as of ${fdate(exAsOf(ex))}` }, { bar: c }, { t: fmt(c.total), bold: true }, ...K.statusCols(c),
       sh ? { t: fmt(sh.n), bold: true, color: SHC, sub: pct(sh.n, c.total) + "%" } : { t: "-", color: PC.muted }]; }), [20, 33, 43]);
   for (const ex of EXERCISES) {
-    const all = rowsOf(ex.id); if (!all.length) continue;
-    const c = counts(all);
+    const all = rowsOf(ex.id), c = exCounts(ex); if (!c) continue;
     K.ensure(150);
     K.pdf.rect(K.M, K.y, 4, 16, ex.rgb);
     K.pdf.text(K.M + 10, K.y + 12, `${ex.org} - ${ex.name}`, 12.5, true, ex.rgb);
-    K.pdf.text(K.M + K.W, K.y + 12, `Data as of ${fdate(latestUpd(all))}`, 8, false, PC.muted, "right");
+    K.pdf.text(K.M + K.W, K.y + 12, `${ex.manual ? "Summary figures" : "Data"} as of ${fdate(exAsOf(ex))}`, 8, false, PC.muted, "right");
     K.y += 26;
     K.kpis(c, ex.rgb); K.sharedBanner(sharedOf(ex.id, all, true), c.total); K.overall(c); K.y += 6;
   }
@@ -1090,6 +1151,14 @@ function buildOverviewReport(){
 }
 function buildReport(){
   if (!S.ex) return buildOverviewReport();
+  if (EX().manual) {
+    const ex = EX(), c = manualCounts(ex.id) || { total: 0, "COMPLETED": 0, "IN PROGRESS": 0, "NOT STARTED": 0, stale: null, avg: null };
+    const K = pdfKit(`${ex.org} - ${ex.name}`, `Status Report  |  Summary figures as of ${fdate(exAsOf(ex))}`, ex.rgb);
+    K.header(true); K.kpis(c, ex.rgb); K.sharedBanner(sharedOf(ex.id, [], true), c.total);
+    K.section("Overall status"); K.overall(c);
+    K.ensure(20); K.pdf.text(K.M, K.y + 4, "Summary figures entered by the admin. PMU-wise and project-wise details are not available for this exercise.", 8, false, PC.muted);
+    return K.finish(`${ex.org}_${ex.name}_Summary`);
+  }
   const ex = EX(), list = filtered(), c = counts(list);
   const extra = [S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.shared && SH_LABEL, S.f.q && `Search "${S.f.q}"`].filter(Boolean).join("  |  ");
   const anyF = S.f.l1 || S.f.l2 || S.f.status || S.f.q || S.f.stale || S.f.shared, auto = hasTranche(ex.id);
@@ -1206,10 +1275,17 @@ async function putFile(path, b64content, message){
 }
 /* ---------- Reviewed & Shared numbers typed in by the admin (shared.json) ---------- */
 const MANUAL_FILE = "shared.json";
-function openSharedEditor(){
+const MF = [["completed", "Completed"], ["inProgress", "In progress"], ["notStarted", "Not started"], ["stale", "No update > N days"], ["avg", "Average progress %"], ["count", "Reviewed & Shared"]];
+function manualTotal(id){ const g = f => +(document.querySelector(`[data-mf="${id}:${f}"]`) || {}).value || 0; return g("completed") + g("inProgress") + g("notStarted"); }
+function openSharedEditor(focusId){
   const today10 = new Date(today()).toISOString().slice(0, 10);
   $("#shList").innerHTML = EXERCISES.map(ex => {
     const auto = hasTranche(ex.id), total = rowsOf(ex.id).length, m = S.manual[ex.id] || {};
+    if (ex.manual) return `<div class="shrow" id="shrow-${ex.id}" style="--c:${ex.color}">
+      <div><span class="orgtag">${ex.org}</span> <b>${esc(ex.name)}</b><small>Summary figures (no Excel). Total = completed + in progress + not started: <b class="mtot" data-mtot="${ex.id}">${fmt(manualTotal(ex.id) || ((+m.completed || 0) + (+m.inProgress || 0) + (+m.notStarted || 0)))}</b></small></div>
+      <div class="mgrid">${MF.map(([f, l]) => `<label><span>${f === "stale" ? `No update &gt; ${S.staleDays} days` : l}</span><input type="number" min="0" ${f === "avg" ? 'max="100" step="0.1"' : ""} inputmode="decimal" data-mf="${ex.id}:${f}" value="${m[f] ?? ""}" placeholder="${f === "stale" || f === "avg" ? "optional" : "0"}"></label>`).join("")}
+        <label><span>Figures as of</span><input type="date" data-shd="${ex.id}" value="${m.date || today10}"></label></div>
+    </div>`;
     return `<div class="shrow" style="--c:${ex.color}">
       <div><span class="orgtag">${ex.org}</span> <b>${esc(ex.name)}</b><small>${fmt(total)} projects in published data</small></div>
       ${auto ? `<div class="shauto">Calculated automatically ${rowsOf(ex.id).cols && rowsOf(ex.id).cols.tranche ? "from the <b>Tranche</b> column of the status file" : `from the review tracker${curReview(ex.id) ? " <b>" + esc(curReview(ex.id).source) + "</b>" : ""}`}: <b>${fmt(rowsOf(ex.id).filter(p => p.shared).length)}</b></div>`
@@ -1217,11 +1293,30 @@ function openSharedEditor(){
     </div>`;
   }).join("");
   $("#shMsg").innerHTML = "";
+  document.querySelectorAll("[data-mf]").forEach(i => i.oninput = () => { const id = i.dataset.mf.split(":")[0]; const t = $(`[data-mtot="${id}"]`); if (t) t.textContent = fmt(manualTotal(id)); });
   openModal("#mShared");
+  if (focusId) setTimeout(() => { const r = $("#shrow-" + focusId); if (r) r.scrollIntoView({ block: "center" }); }, 60);
 }
 function collectManual(){
   const out = {}, errs = [];
   for (const ex of EXERCISES) {
+    if (ex.manual) {
+      const v = {}; let any = false, bad = false;
+      for (const [f, l] of MF) {
+        const raw = document.querySelector(`[data-mf="${ex.id}:${f}"]`).value;
+        if (raw === "") { v[f] = null; continue; }
+        const n = f === "avg" ? Math.round(+raw * 10) / 10 : Math.round(+raw);
+        if (!(n >= 0) || (f === "avg" && n > 100)) { errs.push(`${exTitle(ex)}: check "${l}"`); bad = true; continue; }
+        v[f] = n; any = true;
+      }
+      if (bad || !any) continue;
+      const T = (v.completed || 0) + (v.inProgress || 0) + (v.notStarted || 0);
+      if (!T) { errs.push(`${exTitle(ex)}: enter Completed, In progress and Not started`); continue; }
+      if (v.stale != null && v.stale > (v.inProgress || 0)) { errs.push(`${exTitle(ex)}: "No update" (${v.stale}) cannot be more than In progress (${v.inProgress || 0})`); continue; }
+      if (v.count != null && v.count > T) { errs.push(`${exTitle(ex)}: Reviewed & Shared (${v.count}) is more than the ${T} projects`); continue; }
+      out[ex.id] = { ...v, date: document.querySelector(`[data-shd="${ex.id}"]`).value || new Date(today()).toISOString().slice(0, 10) };
+      continue;
+    }
     const i = document.querySelector(`[data-shn="${ex.id}"]`); if (!i) { if (S.manual[ex.id]) out[ex.id] = S.manual[ex.id]; continue; }
     if (i.value === "") continue;
     const n = Math.round(+i.value), total = rowsOf(ex.id).length;
@@ -1270,7 +1365,7 @@ async function publish(ex){
 /* ---------- Upload (admin) ---------- */
 let upSel = null, upType = "status";
 function openUpload(pre){
-  upSel = pre || S.ex || null; upType = "status";
+  upSel = pre || (EX() && !EX().manual ? S.ex : null); upType = "status";
   $("#upMsg").innerHTML = "";
   drawUpEx(); drawUpType(); openModal("#mUpload");
 }
@@ -1281,7 +1376,7 @@ function drawUpType(){
   document.querySelectorAll("[data-ut]").forEach(b => b.onclick = () => { upType = b.dataset.ut; $("#upMsg").innerHTML = ""; drawUpType(); });
 }
 function drawUpEx(){
-  $("#upEx").innerHTML = EXERCISES.map(e => `<button class="upopt ${upSel === e.id ? "on" : ""}" data-ue="${e.id}" style="--c:${e.color}"><span class="orgtag">${e.org}</span><b>${esc(e.name)}</b><small>${e.idLabel} · ${e.levels.map(l => l[1]).join(" → ")}</small></button>`).join("");
+  $("#upEx").innerHTML = EXERCISES.filter(e => !e.manual).map(e => `<button class="upopt ${upSel === e.id ? "on" : ""}" data-ue="${e.id}" style="--c:${e.color}"><span class="orgtag">${e.org}</span><b>${esc(e.name)}</b><small>${e.idLabel} · ${e.levels.map(l => l[1]).join(" → ")}</small></button>`).join("");
   document.querySelectorAll("[data-ue]").forEach(b => b.onclick = () => { upSel = b.dataset.ue; $("#upMsg").innerHTML = ""; drawUpEx(); });
 }
 $("#btnUpload").onclick = () => openUpload();
@@ -1396,7 +1491,7 @@ async function loadReview(ex){
 }
 async function loadAll(){
   route();
-  await Promise.all([loadManual(), ...EXERCISES.map(ex => Promise.all([loadOne(ex), loadReview(ex)]).then(() => { applyReview(ex.id); if (!S.ex || S.ex === ex.id) render(); }))]);
+  await Promise.all([loadManual().then(() => render()), ...EXERCISES.filter(ex => !ex.manual).map(ex => Promise.all([loadOne(ex), loadReview(ex)]).then(() => { applyReview(ex.id); if (!S.ex || S.ex === ex.id) render(); }))]);
   render();
 }
 /* pick up a newer app version right away instead of waiting for the browser cache */
