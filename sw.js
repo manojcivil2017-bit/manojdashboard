@@ -1,5 +1,5 @@
 // Offline support: app files are cached; data files are always fetched fresh when online.
-const CACHE = "rating-status-v8";
+const CACHE = "rating-status-v9";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -17,7 +17,7 @@ self.addEventListener("fetch", e => {
       if (res.ok) {
         const copy = res.clone();
         const file = url.pathname.split("/").pop();
-        const key = file.endsWith(".xlsx") ? file : e.request;
+        const key = (file.endsWith(".xlsx") || file.endsWith(".json")) && !file.endsWith(".webmanifest") ? file : e.request;
         caches.open(CACHE).then(c => c.put(key, copy));
       }
       return res;

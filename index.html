@@ -181,6 +181,18 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
   .grp td small{font-size:10px}
 }
 #msgBox{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+/* v2.1 reviewed & shared */
+@media(min-width:760px){.kpis{grid-template-columns:repeat(6,1fr)}}
+.kpi.shr{background:linear-gradient(135deg,#fff 60%,#f4eefb)}
+@media(max-width:759px){.kpi.shr{grid-column:1/-1}}
+.kedit{margin-top:6px;border:1px solid #d9c9ee;background:#fff;color:#6b3fa0;border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
+.exshared{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;margin-top:10px;background:#f4eefb;border:1px solid #e3d6f3;border-left:4px solid #6b3fa0;border-radius:10px;padding:8px 10px;color:#4a2a73;font-size:13px}
+.exshared b{font-size:18px;color:#6b3fa0}.exshared small{color:#6d5a86;font-size:12px}
+.shrtag{display:inline-block;margin-top:5px;background:#f4eefb;color:#6b3fa0;border:1px solid #e3d6f3;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap}
+.shrow{border:1px solid var(--line);border-left:5px solid var(--c);border-radius:12px;padding:10px;margin-top:10px}
+.shrow .orgtag{background:var(--c)}.shrow small{display:block;color:var(--muted);font-size:11.5px;margin-top:3px}
+.shin{display:flex;gap:8px;margin-top:8px}.shin input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px;font-size:15px}
+.shauto{margin-top:8px;font-size:13px;color:#4a2a73;background:#f4eefb;border-radius:8px;padding:7px 9px}
 /* v2 multi-exercise */
 [hidden]{display:none!important}
 .topbar{position:sticky;top:0;z-index:20}
@@ -308,8 +320,20 @@ header h1{font-size:18px;line-height:1.2}
     <button class="btn" data-close>Cancel</button>
     <button class="btn primary" id="btnSaveSet">Save</button>
   </div>
+  <div class="row"><button class="btn" id="btnShEdit">📤 Update "Reviewed &amp; Shared" numbers</button></div>
   <div class="row"><button class="btn" id="btnLogout" style="color:var(--warn)">Log out of admin on this device</button></div>
   <div class="hint" id="appVer"></div>
+</div></div>
+
+<div class="modal" id="mShared"><div class="sheet">
+  <h3>Reviewed &amp; Shared with field units <button class="x" data-close>×</button></h3>
+  <div class="hint" style="margin-top:0">Enter how many projects have been <b>reviewed and shared with field units</b> for each exercise, and the date of the figure. NHAI PD Rating is calculated automatically from the Tranche column of its Excel file.</div>
+  <div id="shList"></div>
+  <div id="shMsg"></div>
+  <div class="row">
+    <button class="btn" id="btnShDl">Download file</button>
+    <button class="btn primary" id="btnShPub">Publish for everyone</button>
+  </div>
 </div></div>
 
 <div class="modal" id="mLogin"><div class="sheet">
@@ -326,7 +350,7 @@ header h1{font-size:18px;line-height:1.2}
 
 <script>
 "use strict";
-const APP_VERSION = "2.0.1";
+const APP_VERSION = "2.1.0";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem("pd_"+k, JSON.stringify(v)); }catch(e){} }
@@ -374,39 +398,55 @@ const xml = t => new DOMParser().parseFromString(t, "application/xml");
 const tags = (node, name) => Array.from(node.getElementsByTagNameNS("*", name));
 const colIdx = ref => { let n = 0; for (const ch of ref.replace(/[0-9]/g, "")) n = n * 26 + (ch.charCodeAt(0) - 64); return n - 1; };
 
-async function readXlsx(buf){
+async function readSheets(buf){
   const z = unzip(buf);
   const shared = [];
   const ss = await z.text("xl/sharedStrings.xml");
   if (ss) for (const si of tags(xml(ss), "si")) shared.push(tags(si, "t").map(t => t.textContent).join(""));
-  // first worksheet
-  let sheetPath = "xl/worksheets/sheet1.xml";
+  // every worksheet, in workbook order, with its tab name
+  const list = [];
   const wb = await z.text("xl/workbook.xml"), rels = await z.text("xl/_rels/workbook.xml.rels");
   if (wb && rels) {
-    const first = tags(xml(wb), "sheet")[0];
-    const rid = first && (first.getAttribute("r:id") || first.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
-    const rel = tags(xml(rels), "Relationship").find(r => r.getAttribute("Id") === rid);
-    if (rel) { const t = rel.getAttribute("Target"); sheetPath = t.startsWith("/") ? t.slice(1) : "xl/" + t.replace(/^\.\//, ""); }
-  }
-  const st = await z.text(sheetPath);
-  if (!st) throw new Error("Could not find a worksheet in this file.");
-  const rows = [];
-  for (const r of tags(xml(st), "row")) {
-    const arr = [];
-    for (const c of tags(r, "c")) {
-      const ref = c.getAttribute("r"), t = c.getAttribute("t");
-      const v = tags(c, "v")[0];
-      let val = null;
-      if (t === "s") val = v ? shared[+v.textContent] : "";
-      else if (t === "inlineStr") val = tags(c, "t").map(x => x.textContent).join("");
-      else if (t === "str" || t === "e") val = v ? v.textContent : "";
-      else if (t === "b") val = v ? v.textContent === "1" : false;
-      else val = v ? Number(v.textContent) : null;
-      arr[ref ? colIdx(ref) : arr.length] = val;
+    const rl = tags(xml(rels), "Relationship");
+    for (const sh of tags(xml(wb), "sheet")) {
+      const rid = sh.getAttribute("r:id") || sh.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+      const rel = rl.find(r => r.getAttribute("Id") === rid);
+      if (rel) { const t = rel.getAttribute("Target"); list.push({ name: sh.getAttribute("name") || "", path: t.startsWith("/") ? t.slice(1) : "xl/" + t.replace(/^\.\//, "") }); }
     }
-    rows.push(arr);
   }
-  return rows;
+  if (!list.length) list.push({ name: "Sheet1", path: "xl/worksheets/sheet1.xml" });
+  const out = [];
+  for (const sh of list) {
+    const st = await z.text(sh.path);
+    if (!st) continue;
+    const rows = [];
+    for (const r of tags(xml(st), "row")) {
+      const arr = [];
+      for (const c of tags(r, "c")) {
+        const ref = c.getAttribute("r"), t = c.getAttribute("t");
+        const v = tags(c, "v")[0];
+        let val = null;
+        if (t === "s") val = v ? shared[+v.textContent] : "";
+        else if (t === "inlineStr") val = tags(c, "t").map(x => x.textContent).join("");
+        else if (t === "str" || t === "e") val = v ? v.textContent : "";
+        else if (t === "b") val = v ? v.textContent === "1" : false;
+        else val = v ? Number(v.textContent) : null;
+        arr[ref ? colIdx(ref) : arr.length] = val;
+      }
+      rows.push(arr);
+    }
+    out.push({ name: sh.name, rows });
+  }
+  if (!out.length) throw new Error("Could not find a worksheet in this file.");
+  return out;
+}
+/* Use the "Master Project List" tab when there is one, else the first tab that has project data */
+async function readProjects(buf){
+  const sheets = await readSheets(buf);
+  sheets.sort((a, b) => (/master\s*project/i.test(b.name) ? 1 : 0) - (/master\s*project/i.test(a.name) ? 1 : 0));
+  let firstErr = null;
+  for (const sh of sheets) { try { const p = toProjects(sh.rows); p.sheet = sh.name; return p; } catch (e) { firstErr = firstErr || e; } }
+  throw firstErr;
 }
 
 
@@ -454,7 +494,7 @@ function toProjects(rows){
   const want = {
     upn: /^upn|^upc|project\s*id|^id$|project\s*code/i, ro: /^ro$|regional/i, unit: /^piu|^pmu|^unit/i,
     name: /project\s*name|name of|^name$|description/i, prog: /progress|%/i,
-    status: /status/i, upd: /updated|update|date/i
+    status: /^(?!.*review).*status/i, upd: /updated|update|date/i, tranche: /tranche/i
   };
   let hi = -1, map = null, heads = null;
   for (let i = 0; i < Math.min(rows.length, 15); i++) {
@@ -476,7 +516,8 @@ function toProjects(rows){
     out.push({
       upn: String(g("upn") ?? "").trim(), ro: String(g("ro") ?? "").trim() || "(No RO)",
       unit: String(g("unit") ?? "").trim() || "(None)", name: String(g("name") ?? "").trim(),
-      prog: p, rawStatus: g("status"), upd: parseDate(g("upd"))
+      prog: p, rawStatus: g("status"), upd: parseDate(g("upd")),
+      tranche: String(g("tranche") ?? "").trim()
     });
   }
   const frac = maxProg > 0 && maxProg <= 1;
@@ -484,10 +525,11 @@ function toProjects(rows){
     if (frac && o.prog != null) o.prog = o.prog * 100;
     if (o.prog != null) o.prog = Math.max(0, Math.min(100, Math.round(o.prog * 10) / 10));
     o.status = normStatus(o.rawStatus, o.prog);
-    o.hay = (o.upn + " " + o.name + " " + o.ro + " " + o.unit).toLowerCase();
+    o.shared = !!o.tranche;
+    o.hay = (o.upn + " " + o.name + " " + o.ro + " " + o.unit + " " + o.tranche).toLowerCase();
   }
   if (!out.length) throw new Error("No project rows found below the header.");
-  out.cols = { ro: map.ro != null, unit: map.unit != null, unitHead: map.unit != null ? heads[map.unit] : "" };
+  out.cols = { tranche: map.tranche != null, ro: map.ro != null, unit: map.unit != null, unitHead: map.unit != null ? heads[map.unit] : "" };
   return out;
 }
 /* Does this file have the columns the exercise needs? Returns an error text or "" */
@@ -515,8 +557,8 @@ function bestOverlap(projects){
 
 /* ---------- State ---------- */
 const S = {
-  ex: null, D: {},
-  f: { l1: "", l2: "", status: "", q: "", stale: false },
+  ex: null, D: {}, manual: {},
+  f: { l1: "", l2: "", status: "", q: "", stale: false, shared: false },
   shown: 30, showProj: false, sortKey: "total", sortDir: -1,
   staleDays: LS.get("staleDays", 15)
 };
@@ -530,20 +572,32 @@ const today = () => { const d = new Date(); return Date.UTC(d.getFullYear(), d.g
 const isStale = p => p.status === "IN PROGRESS" && (!p.upd || (today() - p.upd.getTime()) / 864e5 > S.staleDays);
 const latestUpd = list => list.reduce((m, p) => p.upd && (!m || p.upd > m) ? p.upd : m, null);
 const EX = () => exById(S.ex);
+/* "Reviewed & Shared with field units": worked out from the Tranche column when the file has one,
+   otherwise the overall figure the admin typed in (published in shared.json). */
+const SH_LABEL = "Reviewed & Shared", SH_FULL = "Reviewed & shared with field units", SH_COLOR = "#6b3fa0";
+const hasTranche = id => !!(S.D[id] && S.D[id].all && S.D[id].all.cols && S.D[id].all.cols.tranche);
+function sharedOf(id, list, overall){
+  if (hasTranche(id)) return { n: list.filter(p => p.shared).length, auto: true };
+  const m = S.manual[id];
+  if (m && m.count != null && overall) return { n: +m.count, manual: true, asOf: m.date };
+  if (m && m.count != null) return { overallOnly: true, n: +m.count, asOf: m.date };
+  return null;
+}
 const rowsOf = id => (S.D[id] && S.D[id].all) || [];
 const lv = n => EX().levels[n];   // [field, label] or undefined
 const valLabel = (label, v) => new RegExp("^" + label + "\\b", "i").test(v) || /^(RO|PMU|PIU)\b/i.test(v) ? v : `${label} ${v}`;
 
 function filtered(){
-  const { l1, l2, status, q, stale } = S.f, qq = q.trim().toLowerCase(), L1 = lv(0), L2 = lv(1);
+  const { l1, l2, status, q, stale, shared } = S.f, qq = q.trim().toLowerCase(), L1 = lv(0), L2 = lv(1);
   return rowsOf(S.ex).filter(p => (!l1 || p[L1[0]] === l1) && (!l2 || !L2 || p[L2[0]] === l2) && (!status || p.status === status)
-    && (!stale || isStale(p)) && (!qq || p.hay.includes(qq)));
+    && (!stale || isStale(p)) && (!shared || p.shared) && (!qq || p.hay.includes(qq)));
 }
 function counts(list){
   const c = { total: list.length, "COMPLETED": 0, "IN PROGRESS": 0, "NOT STARTED": 0, stale: 0, progSum: 0, progN: 0 };
   for (const p of list) { c[p.status] = (c[p.status] || 0) + 1; if (isStale(p)) c.stale++; if (p.prog != null) { c.progSum += p.prog; c.progN++; } }
   c.avg = c.progN ? Math.round(c.progSum / c.progN) : 0;
   c.donePct = c.total ? c["COMPLETED"] / c.total : 0;
+  c.shared = list.filter(p => p.shared).length;
   return c;
 }
 const uniq = (list, k) => Array.from(new Set(list.map(p => p[k]))).sort((a, b) => a.localeCompare(b));
@@ -607,8 +661,9 @@ function render(){
   gl.sort((a, b) => sk === "name" ? sd * a.name.localeCompare(b.name) : (sd * ((a[sk] ?? 0) - (b[sk] ?? 0)) || a.name.localeCompare(b.name)));
   const ar = k => S.sortKey === k ? (S.sortDir === -1 ? " ▼" : " ▲") : "";
   const sorted = sortProjects(list);
-  const anyFilter = S.f.l1 || S.f.l2 || S.f.status || S.f.q || S.f.stale;
+  const anyFilter = S.f.l1 || S.f.l2 || S.f.status || S.f.q || S.f.stale || S.f.shared;
   const cols = [["upn", ex.idLabel], ...ex.levels];
+  const auto = hasTranche(ex.id), sh = sharedOf(ex.id, list, !anyFilter), isAdmin = !!$("#btnUpload");
 
   app.innerHTML = `
   <div class="ctx" style="--c:${ex.color}"><span class="orgtag">${ex.org}</span><span><b>${esc(ex.name)}</b> · ${esc(ex.orgFull)}</span></div>
@@ -620,6 +675,7 @@ function render(){
   <div class="chips">
     ${STATUSES.map(s => `<button class="chip ${S.f.status === s.k ? "on" : ""}" data-st="${s.k}"><span class="dot" style="background:${s.c}"></span>${s.label}</button>`).join("")}
     <button class="chip ${S.f.stale ? "on" : ""}" id="chStale"><span class="dot" style="background:var(--warn)"></span>No update &gt; ${S.staleDays} days</button>
+    ${auto ? `<button class="chip ${S.f.shared ? "on" : ""}" id="chShared"><span class="dot" style="background:${SH_COLOR}"></span>${SH_LABEL}</button>` : ""}
     ${anyFilter ? `<button class="chip clear" id="chClear">Clear filters ×</button>` : ""}
   </div>
   <div class="scopebar">Showing: <b>${esc(exTitle(ex))}</b> › <b>${esc(scopeLabel())}</b></div>
@@ -627,6 +683,7 @@ function render(){
     <div class="kpi total" style="--c:${ex.color}" data-k=""><div class="k">Total projects</div><div class="v">${fmt(c.total)}</div><div class="p">Average progress ${c.avg}%</div></div>
     ${STATUSES.map(s => `<div class="kpi" style="--c:${s.c}" data-k="${s.k}"><div class="k">${s.label}</div><div class="v" style="color:${s.c === "var(--ns)" ? "#5d6b78" : s.c}">${fmt(c[s.k] || 0)}</div><div class="p">${pct(c[s.k] || 0, c.total)}% of total</div></div>`).join("")}
     <div class="kpi" style="--c:var(--warn)" data-k="stale"><div class="k">No recent update</div><div class="v" style="color:var(--warn)">${fmt(c.stale)}</div><div class="p">In progress, &gt; ${S.staleDays} days</div></div>
+    ${sharedKpi(ex, sh, c, auto, isAdmin)}
   </div>
   <div class="card">
     <h2>Overall status<span class="note">${esc(scopeLabel())}</span></h2>
@@ -644,6 +701,7 @@ function render(){
         <th class="n" data-sort="IN PROGRESS"><span class="lg">In progress</span><span class="sm">In prog.</span>${ar("IN PROGRESS")}</th>
         <th class="n" data-sort="NOT STARTED">Not started${ar("NOT STARTED")}</th>
         <th class="n" data-sort="stale"><span class="lg">No update<br>&gt; ${S.staleDays}d</span><span class="sm">No upd. &gt;${S.staleDays}d</span>${ar("stale")}</th>
+        ${auto ? `<th class="n" data-sort="shared" style="color:${SH_COLOR}"><span class="lg">Reviewed &amp;<br>Shared</span><span class="sm">Rev. &amp; shared</span>${ar("shared")}</th>` : ""}
       </tr></thead>
       <tbody>${gl.map(g => `<tr class="row" data-g="${esc(g.name)}">
         <td class="nm"><div class="gname" style="color:${ex.color}">${esc(g.name)} ›</div>${stackBar(g)}</td>
@@ -651,7 +709,8 @@ function render(){
         <td class="n c-done">${g["COMPLETED"]}<small>${pct(g["COMPLETED"], g.total)}%</small></td>
         <td class="n c-prog">${g["IN PROGRESS"]}<small>${pct(g["IN PROGRESS"], g.total)}%</small></td>
         <td class="n c-ns">${g["NOT STARTED"]}<small>${pct(g["NOT STARTED"], g.total)}%</small></td>
-        <td class="n" style="color:${g.stale ? "var(--warn)" : "var(--muted)"};font-weight:${g.stale ? 700 : 400}">${g.stale}</td></tr>`).join("")}</tbody>
+        <td class="n" style="color:${g.stale ? "var(--warn)" : "var(--muted)"};font-weight:${g.stale ? 700 : 400}">${g.stale}</td>
+        ${auto ? `<td class="n" style="color:${SH_COLOR};font-weight:700">${g.shared}<small>${pct(g.shared, g.total)}%</small></td>` : ""}</tr>`).join("")}</tbody>
     </table></div>
   </div>`}
   <div class="card">
@@ -662,14 +721,27 @@ function render(){
     ${!S.showProj ? "" : list.length ? `
     <div class="tscroll"><table class="ptab">
       <thead><tr style="--c:${ex.color}"><th class="idx">#</th><th>Project name</th>${cols.map(([f, l]) => `<th class="c-x">${l}</th>`).join("")}<th>Current status</th></tr></thead>
-      <tbody>${sorted.slice(0, S.shown).map((p, i) => projRow(p, i, cols, ex)).join("")}</tbody>
+      <tbody>${sorted.slice(0, S.shown).map((p, i) => projRow(p, i, cols, ex, auto)).join("")}</tbody>
     </table></div>
     ${list.length > S.shown ? `<button class="btn more" id="btnMore">Show more (${fmt(list.length - S.shown)} left)</button>` : ""}` : `<div class="empty">No projects match these filters.</div>`}
   </div>
   <div class="foot">${esc(exTitle(ex))} · Source: ${esc(d.source)} · Latest update in file: ${fdate(latestUpd(all))} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
   bind();
 }
-function projRow(p, i, cols, ex){
+const asOfTxt = d => d ? fdate(parseDate(d)) : "";
+function sharedKpi(ex, sh, c, auto, isAdmin){
+  const v = sh && !sh.overallOnly ? fmt(sh.n) : "–";
+  const sub = !sh ? "With field units · not entered yet"
+    : sh.overallOnly ? `Overall figure only (${fmt(sh.n)}) · clear filters`
+    : sh.auto ? `With field units · ${pct(sh.n, c.total)}% of total`
+    : `With field units · ${pct(sh.n, c.total)}% · as of ${asOfTxt(sh.asOf)}`;
+  return `<div class="kpi shr" style="--c:${SH_COLOR}" data-k="shared"><div class="k">${SH_LABEL}</div><div class="v" style="color:${SH_COLOR}">${v}</div><div class="p">${sub}</div>${isAdmin && !auto ? `<button class="kedit" id="editShared">✎ Edit number</button>` : ""}</div>`;
+}
+function sharedLine(id, all, c){
+  const sh = sharedOf(id, all, true);
+  return `<div class="exshared"><span>📤 ${SH_FULL}</span><b>${sh ? fmt(sh.n) : "–"}</b><small>${sh ? pct(sh.n, c.total) + "% of total" + (sh.manual ? " · as of " + asOfTxt(sh.asOf) : "") : "Not entered yet"}</small></div>`;
+}
+function projRow(p, i, cols, ex, auto){
   const s = stInfo(p.status), st = isStale(p);
   return `<tr>
     <td class="idx">${i + 1}</td>
@@ -677,7 +749,8 @@ function projRow(p, i, cols, ex){
     ${cols.map(([f]) => `<td class="c-x ${f === "upn" ? "mono" : "nw"}">${esc(p[f])}</td>`).join("")}
     <td><span class="badge ${s.cls}">${esc(statusText(p))}</span>
       ${p.prog != null && p.status !== "NOT STARTED" ? `<div class="mini"><i style="width:${p.prog}%;background:${s.c}"></i></div>` : ""}
-      ${st ? `<div class="stale">No update since ${fdate(p.upd)}</div>` : p.upd ? `<div class="upd">Updated ${fdate(p.upd)}</div>` : ""}</td>
+      ${st ? `<div class="stale">No update since ${fdate(p.upd)}</div>` : p.upd ? `<div class="upd">Updated ${fdate(p.upd)}</div>` : ""}
+      ${auto && p.shared ? `<div class="shrtag">📤 Reviewed &amp; shared · ${esc(p.tranche)}</div>` : ""}</td>
   </tr>`;
 }
 function renderHome(){
@@ -697,6 +770,7 @@ function renderHome(){
       <div class="exstats">
         ${STATUSES.map(s => `<div><i style="background:${s.c}"></i><b>${fmt(c[s.k] || 0)}</b><small>${s.label} · ${pct(c[s.k] || 0, c.total)}%</small></div>`).join("")}
       </div>
+      ${sharedLine(ex.id, d.all, c)}
       <div class="exfoot"><span class="${c.stale ? "warnt" : ""}">⚠ ${fmt(c.stale)} in progress, no update &gt; ${S.staleDays}d</span><span>Data as of ${fdate(latestUpd(d.all))}</span></div>`
       : `<div class="exempty">${d.err ? "No data published yet" : "Loading…"}</div>`}
       <div class="exopen">Open dashboard ›</div>
@@ -705,14 +779,15 @@ function renderHome(){
   <div class="card">
     <h2>At a glance<span class="note">each row is a separate exercise</span></h2>
     <div class="tscroll"><table class="grp cmp">
-      <thead><tr><th>Rating exercise</th><th class="n">Total</th><th class="n">Completed</th><th class="n"><span class="lg">In progress</span><span class="sm">In prog.</span></th><th class="n">Not started</th><th class="n"><span class="lg">No update<br>&gt; ${S.staleDays}d</span><span class="sm">No upd. &gt;${S.staleDays}d</span></th></tr></thead>
+      <thead><tr><th>Rating exercise</th><th class="n">Total</th><th class="n">Completed</th><th class="n"><span class="lg">In progress</span><span class="sm">In prog.</span></th><th class="n">Not started</th><th class="n"><span class="lg">No update<br>&gt; ${S.staleDays}d</span><span class="sm">No upd. &gt;${S.staleDays}d</span></th><th class="n" style="color:${SH_COLOR}"><span class="lg">Reviewed &amp;<br>Shared</span><span class="sm">Rev. &amp; shared</span></th></tr></thead>
       <tbody>${rows.map(({ ex, d, c }) => `<tr class="row" data-go="${ex.id}">
         <td class="nm"><div class="gname" style="color:${ex.color}"><span class="orgtag sm" style="--c:${ex.color}">${ex.org}</span> ${esc(ex.name)} ›</div>${d.all ? stackBar(c) : ""}</td>
         ${d.all ? `<td class="n"><b>${fmt(c.total)}</b></td>
         <td class="n c-done">${fmt(c["COMPLETED"])}<small>${pct(c["COMPLETED"], c.total)}%</small></td>
         <td class="n c-prog">${fmt(c["IN PROGRESS"])}<small>${pct(c["IN PROGRESS"], c.total)}%</small></td>
         <td class="n c-ns">${fmt(c["NOT STARTED"])}<small>${pct(c["NOT STARTED"], c.total)}%</small></td>
-        <td class="n" style="color:${c.stale ? "var(--warn)" : "var(--muted)"};font-weight:700">${fmt(c.stale)}</td>` : `<td class="n" colspan="5" style="color:var(--muted)">No data</td>`}
+        <td class="n" style="color:${c.stale ? "var(--warn)" : "var(--muted)"};font-weight:700">${fmt(c.stale)}</td>
+        <td class="n" style="color:${SH_COLOR};font-weight:700">${(sh => sh ? fmt(sh.n) + `<small>${pct(sh.n, c.total)}%</small>` : `<span style="color:var(--muted);font-weight:400">–</span>`)(sharedOf(ex.id, d.all, true))}</td>` : `<td class="n" colspan="6" style="color:var(--muted)">No data</td>`}
       </tr>`).join("")}</tbody>
     </table></div>
   </div>
@@ -730,10 +805,14 @@ function bind(){
   let tmr; $("#fQ").oninput = e => { clearTimeout(tmr); tmr = setTimeout(() => { const pos = e.target.selectionStart; set("q", e.target.value); const q = $("#fQ"); q.focus(); try { q.setSelectionRange(pos, pos); } catch (_) {} }, 250); };
   document.querySelectorAll("[data-st]").forEach(b => b.onclick = () => set("status", S.f.status === b.dataset.st ? "" : b.dataset.st));
   $("#chStale").onclick = () => set("stale", !S.f.stale);
-  const cl = $("#chClear"); if (cl) cl.onclick = () => { S.f = { l1: "", l2: "", status: "", q: "", stale: false }; S.shown = 30; render(); };
+  const chs = $("#chShared"); if (chs) chs.onclick = () => set("shared", !S.f.shared);
+  const es = $("#editShared"); if (es) es.onclick = ev => { ev.stopPropagation(); openSharedEditor(); };
+  const cl = $("#chClear"); if (cl) cl.onclick = () => { S.f = { l1: "", l2: "", status: "", q: "", stale: false, shared: false }; S.shown = 30; render(); };
   document.querySelectorAll(".kpi").forEach(k => k.onclick = () => {
     const v = k.dataset.k;
-    if (v === "stale") set("stale", !S.f.stale); else { S.f.stale = false; set("status", S.f.status === v ? "" : v); }
+    if (v === "stale") set("stale", !S.f.stale);
+    else if (v === "shared") { if (hasTranche(S.ex)) set("shared", !S.f.shared); }
+    else { S.f.stale = false; set("status", S.f.status === v ? "" : v); }
   });
   document.querySelectorAll("tr.row").forEach(r => r.onclick = () => { if (!S.f.l1) { S.f.l2 = ""; set("l1", r.dataset.g); } else set("l2", r.dataset.g); window.scrollTo({ top: 0, behavior: "smooth" }); });
   document.querySelectorAll("th[data-sort]").forEach(h => h.onclick = () => { const k = h.dataset.sort; if (S.sortKey === k) S.sortDir *= -1; else { S.sortKey = k; S.sortDir = k === "name" ? 1 : -1; } render(); });
@@ -746,7 +825,7 @@ function go(id){ if ((location.hash.slice(1) || "") === (id || "")) route(); els
 function route(){
   const id = location.hash.slice(1);
   const nx = exById(id) ? id : null;
-  if (nx !== S.ex) { S.ex = nx; S.f = { l1: "", l2: "", status: "", q: "", stale: false }; S.shown = 30; S.showProj = false; S.sortKey = "total"; S.sortDir = -1; window.scrollTo(0, 0); }
+  if (nx !== S.ex) { S.ex = nx; S.f = { l1: "", l2: "", status: "", q: "", stale: false, shared: false }; S.shown = 30; S.showProj = false; S.sortKey = "total"; S.sortDir = -1; window.scrollTo(0, 0); }
   render();
 }
 window.addEventListener("hashchange", route);
@@ -815,6 +894,8 @@ function overviewMsg(){
     const c = counts(all);
     L.push(`Total: *${fmt(c.total)}* | ✅ ${fmt(c["COMPLETED"])} (${pct(c["COMPLETED"], c.total)}%) | 🔄 ${fmt(c["IN PROGRESS"])} (${pct(c["IN PROGRESS"], c.total)}%) | ⏳ ${fmt(c["NOT STARTED"])} (${pct(c["NOT STARTED"], c.total)}%)`);
     if ($("#optStale").checked) L.push(`⚠️ In progress, no update > ${S.staleDays} days: ${fmt(c.stale)}`);
+    const sh = sharedOf(ex.id, all, true);
+    if (sh) L.push(`📤 ${SH_FULL}: *${fmt(sh.n)}* (${pct(sh.n, c.total)}%)${sh.manual ? ` _as of ${asOfTxt(sh.asOf)}_` : ""}`);
     L.push(`_Data as of ${fdate(latestUpd(all))}_`);
   }
   if ($("#optLink").checked) { L.push(""); L.push(`Dashboard: ${appUrl()}`); }
@@ -823,17 +904,19 @@ function overviewMsg(){
 function summaryMsg(){
   if (!S.ex) return overviewMsg();
   const ex = EX(), list = filtered(), c = counts(list);
-  const scope = [scopeLabel(), S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.q && `"${S.f.q}"`].filter(Boolean).join(" · ");
+  const scope = [scopeLabel(), S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.shared && SH_LABEL, S.f.q && `"${S.f.q}"`].filter(Boolean).join(" · ");
+  const anyF = S.f.l1 || S.f.l2 || S.f.status || S.f.q || S.f.stale || S.f.shared, sh = sharedOf(ex.id, list, !anyF), auto = hasTranche(ex.id);
   const L = [`*${ex.org} – ${ex.name}*`, `*Status as of ${fdate(new Date(today()))}*`, `_${scope}_`, ""];
   L.push(`Total projects: *${fmt(c.total)}*`);
   for (const s of STATUSES) L.push(`${s.em} ${s.label}: *${fmt(c[s.k] || 0)}* (${pct(c[s.k] || 0, c.total)}%)`);
   L.push(`📈 Average progress: ${c.avg}%`);
   if ($("#optStale").checked) L.push(`⚠️ In progress, no update > ${S.staleDays} days: *${fmt(c.stale)}*`);
+  if (sh && !sh.overallOnly) L.push(`📤 ${SH_FULL}: *${fmt(sh.n)}* (${pct(sh.n, c.total)}%)${sh.manual ? ` _as of ${asOfTxt(sh.asOf)}_` : ""}`);
   const G = groupLevel();
   if ($("#optBreak").checked && G) {
     const rows = groupRows(list, G[0]).sort((a, b) => b.total - a.total);
-    L.push(""); L.push(`*By ${G[1]}* (Total | ✅ | 🔄 | ⏳${$("#optStale").checked ? " | ⚠️" : ""})`);
-    for (const k of rows) L.push(`• ${k.name}: ${k.total} | ${k["COMPLETED"]} | ${k["IN PROGRESS"]} | ${k["NOT STARTED"]}${$("#optStale").checked ? " | " + k.stale : ""}`);
+    L.push(""); L.push(`*By ${G[1]}* (Total | ✅ | 🔄 | ⏳${$("#optStale").checked ? " | ⚠️" : ""}${auto ? " | 📤" : ""})`);
+    for (const k of rows) L.push(`• ${k.name}: ${k.total} | ${k["COMPLETED"]} | ${k["IN PROGRESS"]} | ${k["NOT STARTED"]}${$("#optStale").checked ? " | " + k.stale : ""}${auto ? " | " + k.shared : ""}`);
   }
   L.push(""); L.push(`_Data as of ${fdate(latestUpd(rowsOf(ex.id)))}_`);
   if ($("#optLink").checked) L.push(`Dashboard: ${exUrl(ex)}`);
@@ -841,6 +924,7 @@ function summaryMsg(){
 }
 
 /* ---------- PDF reports ---------- */
+const SHC = [107, 63, 160];
 const PC = { done: [31, 138, 76], prog: [47, 111, 179], ns: [160, 172, 184], warn: [194, 65, 12], ink: [20, 33, 43], muted: [93, 107, 120], line: [226, 231, 236], white: [255, 255, 255] };
 const pColor = k => k === "COMPLETED" ? PC.done : k === "IN PROGRESS" ? PC.prog : PC.ns;
 function pdfKit(title, sub, brand){
@@ -909,6 +993,15 @@ function pdfKit(title, sub, brand){
     { t: fmt(c["IN PROGRESS"]), color: PC.prog, bold: true, sub: pct(c["IN PROGRESS"], c.total) + "%" },
     { t: fmt(c["NOT STARTED"]), color: PC.muted, bold: true, sub: pct(c["NOT STARTED"], c.total) + "%" },
     { t: fmt(c.stale), color: c.stale ? PC.warn : PC.muted, bold: !!c.stale }];
+  K.fit = cols => { const used = cols.slice(0, -1).reduce((a, c) => a + c.w, 0); cols[cols.length - 1].w = W - used; return cols; };
+  K.sharedBanner = (sh, total) => {
+    if (!sh) return;
+    K.ensure(34);
+    pdf.rect(M, K.y, W, 24, [243, 238, 250], [214, 200, 235]); pdf.rect(M, K.y, 3.5, 24, SHC);
+    const t = sh.overallOnly ? `Reviewed & shared with field units (overall, all units): ${fmt(sh.n)}` : `Reviewed & shared with field units: ${fmt(sh.n)}  (${pct(sh.n, total)}% of total)`;
+    pdf.text(M + 12, K.y + 15.5, t + (sh.asOf ? `   |   as of ${asOfTxt(sh.asOf)}` : ""), 9.5, true, SHC);
+    K.y += 34;
+  };
   K.finish = name => {
     const n = pdf.pages.length;
     pdf.pages.forEach((ops, i) => { pdf.ops = ops; pdf.line(M, pdf.H - 30, M + W, pdf.H - 30, PC.line);
@@ -921,9 +1014,10 @@ function buildOverviewReport(){
   const K = pdfKit("Rating Exercises - Status Report", "NHAI  |  NHIDCL  |  MoRTH", [20, 33, 43]);
   K.header(true);
   K.section("At a glance - each row is a separate rating exercise");
-  const cols = [{ h: "Organisation", w: 70 }, { h: "Rating exercise", w: 130 }, { h: "Status", w: 80 }, { h: "Total", w: 42, al: "r" }, { h: "Completed", w: 52, al: "r" }, { h: "In progress", w: 52, al: "r" }, { h: "Not started", w: 52, al: "r" }, { h: `No update > ${S.staleDays} days`, w: K.W - 478, al: "r" }];
-  K.table(cols, EXERCISES.filter(ex => rowsOf(ex.id).length).map(ex => { const c = counts(rowsOf(ex.id));
-    return [{ t: ex.org, bold: true, color: ex.rgb }, { t: ex.name, bold: true, sub: `Data as of ${fdate(latestUpd(rowsOf(ex.id)))}` }, { bar: c }, { t: fmt(c.total), bold: true }, ...K.statusCols(c)]; }), [20, 33, 43]);
+  const cols = K.fit([{ h: "Organisation", w: 60 }, { h: "Rating exercise", w: 116 }, { h: "Status", w: 66 }, { h: "Total", w: 40, al: "r" }, { h: "Completed", w: 50, al: "r" }, { h: "In progress", w: 50, al: "r" }, { h: "Not started", w: 50, al: "r" }, { h: `No update > ${S.staleDays} days`, w: 46, al: "r" }, { h: "Reviewed & Shared", w: 0, al: "r" }]);
+  K.table(cols, EXERCISES.filter(ex => rowsOf(ex.id).length).map(ex => { const all = rowsOf(ex.id), c = counts(all), sh = sharedOf(ex.id, all, true);
+    return [{ t: ex.org, bold: true, color: ex.rgb }, { t: ex.name, bold: true, sub: `Data as of ${fdate(latestUpd(all))}` }, { bar: c }, { t: fmt(c.total), bold: true }, ...K.statusCols(c),
+      sh ? { t: fmt(sh.n), bold: true, color: SHC, sub: pct(sh.n, c.total) + "%" } : { t: "-", color: PC.muted }]; }), [20, 33, 43]);
   for (const ex of EXERCISES) {
     const all = rowsOf(ex.id); if (!all.length) continue;
     const c = counts(all);
@@ -932,38 +1026,46 @@ function buildOverviewReport(){
     K.pdf.text(K.M + 10, K.y + 12, `${ex.org} - ${ex.name}`, 12.5, true, ex.rgb);
     K.pdf.text(K.M + K.W, K.y + 12, `Data as of ${fdate(latestUpd(all))}`, 8, false, PC.muted, "right");
     K.y += 26;
-    K.kpis(c, ex.rgb); K.overall(c); K.y += 6;
+    K.kpis(c, ex.rgb); K.sharedBanner(sharedOf(ex.id, all, true), c.total); K.overall(c); K.y += 6;
   }
   return K.finish("Rating_Exercises_Overview");
 }
 function buildReport(){
   if (!S.ex) return buildOverviewReport();
   const ex = EX(), list = filtered(), c = counts(list);
-  const extra = [S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.q && `Search "${S.f.q}"`].filter(Boolean).join("  |  ");
+  const extra = [S.f.status && stInfo(S.f.status).label, S.f.stale && `No update > ${S.staleDays} days`, S.f.shared && SH_LABEL, S.f.q && `Search "${S.f.q}"`].filter(Boolean).join("  |  ");
+  const anyF = S.f.l1 || S.f.l2 || S.f.status || S.f.q || S.f.stale || S.f.shared, auto = hasTranche(ex.id);
   const K = pdfKit(`${ex.org} - ${ex.name}`, `Status Report  |  ${scopeLabel()}${extra ? "  |  " + extra : ""}  |  Data as of ${fdate(latestUpd(rowsOf(ex.id)))}`, ex.rgb);
   K.header(true);
   K.kpis(c, ex.rgb);
+  K.sharedBanner(sharedOf(ex.id, list, !anyF), c.total);
   K.section("Overall status"); K.overall(c); K.y += 4;
   const G = groupLevel();
   if (!atLowestLevel()) {
     if (G) {
       const gl = groupRows(list, G[0]).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
       K.section(`Status by ${G[1]}${S.f.l1 ? "  -  " + S.f.l1 : ""}`);
-      const cols = [{ h: "#", w: 22 }, { h: `${G[1]} name`, w: 140 }, { h: "Status", w: 92 }, { h: "Total", w: 42, al: "r" }, { h: "Completed", w: 58, al: "r" }, { h: "In progress", w: 58, al: "r" }, { h: "Not started", w: 58, al: "r" }, { h: `No update > ${S.staleDays} days`, w: K.W - 470, al: "r" }];
-      K.table(cols, gl.map((g, i) => [{ t: String(i + 1), color: PC.muted }, { t: g.name, bold: true }, { bar: g }, { t: fmt(g.total), bold: true }, ...K.statusCols(g)]), ex.rgb);
+      const cols = K.fit(auto
+        ? [{ h: "#", w: 22 }, { h: `${G[1]} name`, w: 118 }, { h: "Status", w: 78 }, { h: "Total", w: 40, al: "r" }, { h: "Completed", w: 52, al: "r" }, { h: "In progress", w: 52, al: "r" }, { h: "Not started", w: 52, al: "r" }, { h: `No update > ${S.staleDays} days`, w: 50, al: "r" }, { h: "Reviewed & Shared", w: 0, al: "r" }]
+        : [{ h: "#", w: 22 }, { h: `${G[1]} name`, w: 140 }, { h: "Status", w: 92 }, { h: "Total", w: 42, al: "r" }, { h: "Completed", w: 58, al: "r" }, { h: "In progress", w: 58, al: "r" }, { h: "Not started", w: 58, al: "r" }, { h: `No update > ${S.staleDays} days`, w: 0, al: "r" }]);
+      K.table(cols, gl.map((g, i) => [{ t: String(i + 1), color: PC.muted }, { t: g.name, bold: true }, { bar: g }, { t: fmt(g.total), bold: true }, ...K.statusCols(g),
+        ...(auto ? [{ t: fmt(g.shared), bold: true, color: g.shared ? SHC : PC.muted, sub: pct(g.shared, g.total) + "%" }] : [])]), ex.rgb);
     }
     const low = (lv(1) || lv(0))[1];
     K.ensure(20); K.pdf.text(K.M, K.y, `Project-wise details are included when a ${low} is selected in the dashboard filters.`, 8, false, PC.muted); K.y += 14;
   } else {
     K.section(`Project details  -  ${scopeLabel()}`);
     const lvls = ex.levels;
-    const cols = lvls.length === 2
-      ? [{ h: "#", w: 22 }, { h: "Project name", w: 190 }, { h: ex.idLabel, w: 92 }, { h: lvls[0][1], w: 66 }, { h: lvls[1][1], w: 55 }, { h: "Current status", w: K.W - 425 }]
-      : [{ h: "#", w: 22 }, { h: "Project name", w: 215 }, { h: ex.idLabel, w: 100 }, { h: lvls[0][1], w: 88 }, { h: "Current status", w: K.W - 425 }];
+    const cols = K.fit(lvls.length === 2
+      ? (auto ? [{ h: "#", w: 22 }, { h: "Project name", w: 162 }, { h: ex.idLabel, w: 88 }, { h: lvls[0][1], w: 62 }, { h: lvls[1][1], w: 50 }, { h: "Current status", w: 80 }, { h: "Reviewed & Shared", w: 0 }]
+              : [{ h: "#", w: 22 }, { h: "Project name", w: 190 }, { h: ex.idLabel, w: 92 }, { h: lvls[0][1], w: 66 }, { h: lvls[1][1], w: 55 }, { h: "Current status", w: 0 }])
+      : (auto ? [{ h: "#", w: 22 }, { h: "Project name", w: 185 }, { h: ex.idLabel, w: 92 }, { h: lvls[0][1], w: 80 }, { h: "Current status", w: 82 }, { h: "Reviewed & Shared", w: 0 }]
+              : [{ h: "#", w: 22 }, { h: "Project name", w: 215 }, { h: ex.idLabel, w: 100 }, { h: lvls[0][1], w: 88 }, { h: "Current status", w: 0 }]));
     K.table(cols, sortProjects(list).map((p, i) => {
       const st = isStale(p);
       return [{ t: String(i + 1), color: PC.muted }, { t: p.name, bold: true, color: ex.rgb }, { t: p.upn, size: 8 }, ...lvls.map(([f]) => ({ t: p[f], size: 8 })),
-        { t: statusText(p).replace(" · ", " - "), bold: true, color: p.status === "NOT STARTED" ? PC.muted : pColor(p.status), sub: st ? `No update since ${fdate(p.upd).replace(/ \d{4}$/, "")}` : (p.upd ? `Updated ${fdate(p.upd)}` : ""), subColor: st ? PC.warn : PC.muted }];
+        { t: statusText(p).replace(" · ", " - "), bold: true, color: p.status === "NOT STARTED" ? PC.muted : pColor(p.status), sub: st ? `No update since ${fdate(p.upd).replace(/ \d{4}$/, "")}` : (p.upd ? `Updated ${fdate(p.upd)}` : ""), subColor: st ? PC.warn : PC.muted },
+        ...(auto ? [p.shared ? { t: "Yes", bold: true, color: SHC, sub: p.tranche, subColor: SHC } : { t: "-", color: PC.muted }] : [])];
     }), ex.rgb);
   }
   return K.finish(`${ex.org}_${ex.name}_${scopeLabel()}`);
@@ -1033,19 +1135,75 @@ function b64(buf){
   for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
   return btoa(s);
 }
-async function publish(ex){
-  const d = S.D[ex.id], token = LS.get("token", ""), repo = LS.get("repo", "") || defaultRepo();
-  if (!token || !repo) { toast("Add your GitHub token in Settings first."); $("#btnSettings").click(); return; }
-  const btn = $("#btnPub"); if (btn) { btn.disabled = true; btn.textContent = "Publishing…"; }
-  const api = `https://api.github.com/repos/${repo}/contents/${ex.file}`;
+async function putFile(path, b64content, message){
+  const token = LS.get("token", ""), repo = LS.get("repo", "") || defaultRepo();
+  if (!token || !repo) throw new Error("No GitHub token on this device. Add it in Settings first.");
+  const api = `https://api.github.com/repos/${repo}/contents/${path}`;
   const H = { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" };
+  let sha;
+  const g = await fetch(api + "?ref=main&t=" + Date.now(), { headers: H, cache: "no-store" });
+  if (g.ok) sha = (await g.json()).sha; else if (g.status !== 404) throw new Error(`GitHub said ${g.status} while checking the current file. Check the token and repository name.`);
+  const r = await fetch(api, { method: "PUT", headers: H, body: JSON.stringify({ message, content: b64content, branch: "main", ...(sha ? { sha } : {}) }) });
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`GitHub said ${r.status}: ${j.message || "unknown error"}`); }
+}
+/* ---------- Reviewed & Shared numbers typed in by the admin (shared.json) ---------- */
+const MANUAL_FILE = "shared.json";
+function openSharedEditor(){
+  const today10 = new Date(today()).toISOString().slice(0, 10);
+  $("#shList").innerHTML = EXERCISES.map(ex => {
+    const auto = hasTranche(ex.id), total = rowsOf(ex.id).length, m = S.manual[ex.id] || {};
+    return `<div class="shrow" style="--c:${ex.color}">
+      <div><span class="orgtag">${ex.org}</span> <b>${esc(ex.name)}</b><small>${fmt(total)} projects in published data</small></div>
+      ${auto ? `<div class="shauto">Calculated automatically from the <b>Tranche</b> column: <b>${fmt(rowsOf(ex.id).filter(p => p.shared).length)}</b></div>`
+        : `<div class="shin"><input type="number" min="0" ${total ? `max="${total}"` : ""} inputmode="numeric" data-shn="${ex.id}" value="${m.count ?? ""}" placeholder="Number"><input type="date" data-shd="${ex.id}" value="${m.date || today10}"></div>`}
+    </div>`;
+  }).join("");
+  $("#shMsg").innerHTML = "";
+  openModal("#mShared");
+}
+function collectManual(){
+  const out = {}, errs = [];
+  for (const ex of EXERCISES) {
+    const i = document.querySelector(`[data-shn="${ex.id}"]`); if (!i) { if (S.manual[ex.id]) out[ex.id] = S.manual[ex.id]; continue; }
+    if (i.value === "") continue;
+    const n = Math.round(+i.value), total = rowsOf(ex.id).length;
+    if (!(n >= 0)) { errs.push(`${exTitle(ex)}: enter a number`); continue; }
+    if (total && n > total) { errs.push(`${exTitle(ex)}: ${n} is more than the ${total} projects`); continue; }
+    out[ex.id] = { count: n, date: document.querySelector(`[data-shd="${ex.id}"]`).value || new Date(today()).toISOString().slice(0, 10) };
+  }
+  return { out, errs };
+}
+$("#btnShPub").onclick = async () => {
+  const { out, errs } = collectManual(), msg = $("#shMsg");
+  if (errs.length) { msg.innerHTML = `<div class="banner err">${errs.map(esc).join("<br>")}</div>`; return; }
+  const btn = $("#btnShPub"); btn.disabled = true; btn.textContent = "Publishing…";
   try {
-    let sha;
-    const g = await fetch(api + "?ref=main&t=" + Date.now(), { headers: H, cache: "no-store" });
-    if (g.ok) sha = (await g.json()).sha; else if (g.status !== 404) throw new Error(`GitHub said ${g.status} while checking the current file. Check the token and repository name.`);
-    const r = await fetch(api, { method: "PUT", headers: H, body: JSON.stringify({
-      message: `Update ${ex.org} ${ex.name} data (${d.localFile})`, content: b64(d.localBuf), branch: "main", ...(sha ? { sha } : {}) }) });
-    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`GitHub said ${r.status}: ${j.message || "unknown error"}`); }
+    const json = JSON.stringify(out, null, 2);
+    await putFile(MANUAL_FILE, btoa(unescape(encodeURIComponent(json))), "Update Reviewed & Shared numbers");
+    S.manual = out; $("#mShared").classList.remove("on"); render();
+    banner("ok", "Reviewed & Shared numbers published. Everyone will see them within 1–2 minutes.");
+  } catch (e) {
+    msg.innerHTML = `<div class="banner err">Publishing failed: ${esc(e.message)}<br>You can also tap <b>Download file</b> and upload <b>${MANUAL_FILE}</b> on GitHub.</div>`;
+  }
+  btn.disabled = false; btn.textContent = "Publish for everyone";
+};
+$("#btnShDl").onclick = () => {
+  const { out, errs } = collectManual();
+  if (errs.length) { $("#shMsg").innerHTML = `<div class="banner err">${errs.map(esc).join("<br>")}</div>`; return; }
+  downloadFile(new File([JSON.stringify(out, null, 2)], MANUAL_FILE, { type: "application/json" }));
+};
+$("#btnShEdit").onclick = () => { $("#mSettings").classList.remove("on"); openSharedEditor(); };
+async function loadManual(){
+  try { const r = await fetch(MANUAL_FILE + "?t=" + Date.now(), { cache: "no-store" }); S.manual = r.ok ? await r.json() : {}; }
+  catch (_) { try { const c = await caches.match(MANUAL_FILE, { ignoreSearch: true }); S.manual = c ? await c.json() : {}; } catch (__) { S.manual = {}; } }
+  if (!S.manual || typeof S.manual !== "object") S.manual = {};
+}
+async function publish(ex){
+  const d = S.D[ex.id];
+  if (!LS.get("token", "")) { toast("Add your GitHub token in Settings first."); $("#btnSettings").click(); return; }
+  const btn = $("#btnPub"); if (btn) { btn.disabled = true; btn.textContent = "Publishing…"; }
+  try {
+    await putFile(ex.file, b64(d.localBuf), `Update ${ex.org} ${ex.name} data (${d.localFile})`);
     d.isLocal = false; d.pub = d.all; d.source = `${d.localFile} (published)`;
     render(); banner("ok", `Published ${exTitle(ex)}. Everyone opening the link will see this data within 1–2 minutes.`);
   } catch (e) { render(); banner("err", "Publishing failed: " + e.message); }
@@ -1077,7 +1235,7 @@ $("#file").onchange = async e => {
   const ex = exById(upSel), msg = $("#upMsg");
   try {
     const buf = await f.arrayBuffer();
-    const projects = toProjects(await readXlsx(buf));
+    const projects = await readProjects(buf);
     const warns = [];
     const fe = fitError(ex, projects); if (fe) warns.push(fe);
     const g = guessEx(f.name); if (g && g !== ex.id) warns.push(`The file name "${f.name}" suggests ${exTitle(exById(g))}.`);
@@ -1114,19 +1272,19 @@ async function loadOne(ex){
   try {
     const r = await fetch(ex.file + "?t=" + Date.now(), { cache: "no-store" });
     if (!r.ok) throw new Error("HTTP " + r.status);
-    const rows = toProjects(await readXlsx(await r.arrayBuffer()));
+    const rows = await readProjects(await r.arrayBuffer());
     Object.assign(d, { all: rows, pub: rows, source: ex.file, err: null });
   } catch (e) {
     try {
       const c = await caches.match(ex.file, { ignoreSearch: true });
-      if (c) { const rows = toProjects(await readXlsx(await c.arrayBuffer())); Object.assign(d, { all: rows, pub: rows, source: ex.file + " (offline copy)", err: null }); return; }
+      if (c) { const rows = await readProjects(await c.arrayBuffer()); Object.assign(d, { all: rows, pub: rows, source: ex.file + " (offline copy)", err: null }); return; }
     } catch (_) {}
     d.err = e.message;
   }
 }
 async function loadAll(){
   route();
-  await Promise.all(EXERCISES.map(ex => loadOne(ex).then(() => { if (!S.ex || S.ex === ex.id) render(); })));
+  await Promise.all([loadManual(), ...EXERCISES.map(ex => loadOne(ex).then(() => { if (!S.ex || S.ex === ex.id) render(); }))]);
   render();
 }
 /* pick up a newer app version right away instead of waiting for the browser cache */
@@ -1150,7 +1308,7 @@ async function pbkdf2(pw, saltB64, iter){
 }
 const IS_ADMIN = LS.get("adminHash", "") === ADMIN_LOGIN.hash;
 if (!IS_ADMIN) {
-  ["#btnUpload", "#btnSettings", "#file", "#mSettings", "#mUpload"].forEach(s => { const el = $(s); if (el) el.remove(); });
+  ["#btnUpload", "#btnSettings", "#file", "#mSettings", "#mUpload", "#mShared"].forEach(s => { const el = $(s); if (el) el.remove(); });
 }
 $("#btnLogin").onclick = async () => {
   const u = $("#loginUser").value.trim(), p = $("#loginPass").value;

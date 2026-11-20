@@ -30,6 +30,12 @@ GitHub → Settings → Developer settings → Fine-grained tokens → repositor
 
 **On GitHub (no setup):** rename the Excel to the file name in the table above, then **Add file → Upload files** → Commit.
 
+## Reviewed & Shared with field units
+- **NHAI PD Rating:** counted automatically. Upload the PD Rating progress tracker (tab **Master Project List**);
+  any project with something written in the **Tranche** column counts as reviewed & shared. Shown overall, by RO/PIU and per project.
+- **NHIDCL and MoRTH exercises:** admin enters the overall number: ⚙ Settings → **Update "Reviewed & Shared" numbers**
+  (or **✎ Edit number** on the purple card) → Publish for everyone. Saved in `shared.json` in this repository.
+
 ## Sharing and PDF reports
 - Green **Share status** button: WhatsApp text summary, share PDF (on a phone pick WhatsApp), or download PDF.
 - Overview screen → summary of all exercises. Inside an exercise → report for the current filters.
