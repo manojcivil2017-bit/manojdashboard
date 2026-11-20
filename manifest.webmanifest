@@ -1,6 +1,6 @@
 {
-  "name": "Rating Exercises Dashboard",
-  "short_name": "Rating Status",
+  "name": "Rating Dashboard",
+  "short_name": "Rating Dashboard",
   "description": "Status of NHAI, NHIDCL and MoRTH rating exercises with WhatsApp sharing",
   "start_url": "./",
   "scope": "./",

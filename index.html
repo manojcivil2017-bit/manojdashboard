@@ -3,15 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Rating Exercises Dashboard</title>
+<title>Rating Dashboard</title>
+<meta property="og:title" content="Rating Dashboard">
+<meta property="og:site_name" content="Rating Dashboard">
+<meta property="og:description" content="Live status of ongoing rating exercises – NHAI, NHIDCL and MoRTH">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://manojcivil2017-bit.github.io/manojdashboard/">
+<meta property="og:image" content="https://manojcivil2017-bit.github.io/manojdashboard/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Rating Dashboard">
+<meta name="application-name" content="Rating Dashboard">
 <meta name="theme-color" content="#0f3d5e">
-<meta name="description" content="Status dashboard for NHAI, NHIDCL and MoRTH rating exercises">
+<meta name="description" content="Live status of ongoing rating exercises – NHAI, NHIDCL and MoRTH">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Rating Status">
+<meta name="apple-mobile-web-app-title" content="Rating Dashboard">
 <style>
 :root{
   --bg:#f3f5f8;--card:#fff;--ink:#14212b;--muted:#5d6b78;--line:#e2e7ec;
@@ -350,7 +361,7 @@ header h1{font-size:18px;line-height:1.2}
 
 <script>
 "use strict";
-const APP_VERSION = "2.1.0";
+const APP_VERSION = "2.1.1";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem("pd_"+k, JSON.stringify(v)); }catch(e){} }
@@ -639,7 +650,7 @@ function renderChrome(){
     $("#hOrg").textContent = "NHAI · NHIDCL · MoRTH";
     $("#hTitle").textContent = "Rating Exercises Dashboard";
     $("#asof").textContent = `${EXERCISES.length} ongoing rating exercises`;
-    document.title = "Rating Exercises Dashboard";
+    document.title = "Rating Dashboard";
   }
   $("#tabs").innerHTML = `<button class="tab ${ex ? "" : "on"}" data-go="" style="--c:#14212b"><small>All</small>Overview</button>` +
     EXERCISES.map(e => `<button class="tab ${S.ex === e.id ? "on" : ""}" data-go="${e.id}" style="--c:${e.color}"><small>${e.org}</small>${esc(e.name.replace(" Consultant", ""))}</button>`).join("");

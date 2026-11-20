@@ -1,5 +1,5 @@
 // Offline support: app files are cached; data files are always fetched fresh when online.
-const CACHE = "rating-status-v9";
+const CACHE = "rating-status-v10";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
