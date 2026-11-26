@@ -192,6 +192,14 @@ header{background:linear-gradient(135deg,#0f3d5e 0%,#1c5d8a 100%)}
   .grp td small{font-size:10px}
 }
 #msgBox{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+/* v2.4 week-on-week */
+.wkstrip{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--brand2);border-radius:12px;padding:9px 12px;margin:-4px 0 12px;font-size:13px;color:var(--muted)}
+.wkstrip b{color:var(--ink)}.wkstrip.off{border-left-color:var(--line)}
+.wkstrip .lgd{margin-left:auto;display:flex;gap:6px}
+.wdl{display:inline-block;font-style:normal;font-size:11px;font-weight:800;border-radius:6px;padding:1px 5px;margin-left:4px;white-space:nowrap;vertical-align:middle;line-height:1.5}
+.wdl.g{background:#e3f4ea;color:#1f7a45}.wdl.b{background:#fdeaea;color:#b42318}.wdl.n{background:#eef1f4;color:#4b5866}.wdl.z{background:transparent;color:#98a2ad;font-weight:600}
+.exstats .wdl{margin:2px 0 1px;display:block;width:max-content}
+.grp td .wdl{display:block;width:max-content;margin:3px 0 0 auto}
 /* v2.3 summary-only exercise */
 .mtag{background:#e8f4f3;color:#0b6e69;border:1px solid #bfe0dd;border-radius:6px;font-size:11px;font-weight:700;padding:2px 7px}
 .mnote{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}.mnote>div{flex:1;min-width:220px}
@@ -377,7 +385,7 @@ header h1{font-size:18px;line-height:1.2}
 
 <script>
 "use strict";
-const APP_VERSION = "2.3.0";
+const APP_VERSION = "2.4.0";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem("pd_"+k, JSON.stringify(v)); }catch(e){} }
@@ -586,7 +594,7 @@ function bestOverlap(projects){
 
 /* ---------- State ---------- */
 const S = {
-  ex: null, D: {}, R: {}, manual: {},
+  ex: null, D: {}, R: {}, manual: {}, W: null,
   f: { l1: "", l2: "", status: "", q: "", stale: false, shared: false },
   shown: 30, showProj: false, sortKey: "total", sortDir: -1,
   staleDays: LS.get("staleDays", 15)
@@ -598,13 +606,14 @@ const STATUSES = [
 ];
 const stInfo = k => STATUSES.find(s => s.k === k) || { k, label: k, c: "#888", cls: "b-ns", em: "•" };
 const today = () => { const d = new Date(); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); };
-const isStale = p => p.status === "IN PROGRESS" && (!p.upd || (today() - p.upd.getTime()) / 864e5 > S.staleDays);
+const isStaleAt = (p, ref) => p.status === "IN PROGRESS" && (!p.upd || (ref - p.upd.getTime()) / 864e5 > S.staleDays);
+const isStale = p => isStaleAt(p, today());
 const latestUpd = list => list.reduce((m, p) => p.upd && (!m || p.upd > m) ? p.upd : m, null);
 const EX = () => exById(S.ex);
 /* Summary-only exercises (manual: true): every figure is typed in by the admin and kept in shared.json */
 const numOrNull = v => v === "" || v == null || isNaN(+v) ? null : +v;
-function manualCounts(id){
-  const m = S.manual[id];
+function manualCounts(id, src){
+  const m = (src || S.manual)[id];
   if (!m || [m.completed, m.inProgress, m.notStarted].every(v => numOrNull(v) == null)) return null;
   const C = numOrNull(m.completed) || 0, I = numOrNull(m.inProgress) || 0, N = numOrNull(m.notStarted) || 0, T = C + I + N;
   return { total: T, "COMPLETED": C, "IN PROGRESS": I, "NOT STARTED": N, stale: numOrNull(m.stale), avg: numOrNull(m.avg), shared: numOrNull(m.count), donePct: T ? C / T : 0 };
@@ -670,9 +679,10 @@ function filtered(){
   return rowsOf(S.ex).filter(p => (!l1 || p[L1[0]] === l1) && (!l2 || !L2 || p[L2[0]] === l2) && (!status || p.status === status)
     && (!stale || isStale(p)) && (!shared || p.shared) && (!qq || p.hay.includes(qq)));
 }
-function counts(list){
+function counts(list, ref){
+  ref = ref || today();
   const c = { total: list.length, "COMPLETED": 0, "IN PROGRESS": 0, "NOT STARTED": 0, stale: 0, progSum: 0, progN: 0 };
-  for (const p of list) { c[p.status] = (c[p.status] || 0) + 1; if (isStale(p)) c.stale++; if (p.prog != null) { c.progSum += p.prog; c.progN++; } }
+  for (const p of list) { c[p.status] = (c[p.status] || 0) + 1; if (isStaleAt(p, ref)) c.stale++; if (p.prog != null) { c.progSum += p.prog; c.progN++; } }
   c.avg = c.progN ? Math.round(c.progSum / c.progN) : 0;
   c.donePct = c.total ? c["COMPLETED"] / c.total : 0;
   c.shared = list.filter(p => p.shared).length;
@@ -819,7 +829,8 @@ function sharedKpi(ex, sh, c, auto, isAdmin){
 }
 function sharedLine(id, all, c){
   const sh = sharedOf(id, all, true);
-  return `<div class="exshared"><span>📤 ${SH_FULL}</span><b>${sh ? fmt(sh.n) : "–"}</b><small>${sh ? pct(sh.n, c.total) + "% of total" + (sh.asOf ? " · as of " + asOfTxt(sh.asOf) : "") : "Not entered yet"}</small></div>`;
+  const w = !S.ex && wk(id);
+  return `<div class="exshared"><span>📤 ${SH_FULL}</span><b>${sh ? fmt(sh.n) : "–"}</b>${w ? dl(sh ? sh.n : null, w.shared, true) : ""}<small>${sh ? pct(sh.n, c.total) + "% of total" + (sh.asOf ? " · as of " + asOfTxt(sh.asOf) : "") : "Not entered yet"}</small></div>`;
 }
 function projRow(p, i, cols, ex, auto){
   const s = stInfo(p.status), st = isStale(p);
@@ -833,41 +844,48 @@ function projRow(p, i, cols, ex, auto){
       ${auto && p.shared ? `<div class="shrtag">📤 Reviewed &amp; shared · ${esc(p.tranche)}</div>` : ""}</td>
   </tr>`;
 }
+function weekStrip(){
+  if (!S.W) return `<div class="wkstrip">Loading last week's status for comparison…</div>`;
+  if (S.W.none) return `<div class="wkstrip off">Week-on-week comparison will appear once status from 7 days ago is available.</div>`;
+  return `<div class="wkstrip"><b>Change since last week</b> · compared with status on <b>${wkLabel()}</b>
+    <span class="lgd"><em class="wdl g">▲ better</em><em class="wdl b">▼ worse</em><em class="wdl n">▲ change</em></span></div>`;
+}
 function renderHome(){
   const app = $("#app");
   const rows = EXERCISES.map(ex => ({ ex, d: S.D[ex.id] || {}, c: exCounts(ex) }));
   const lu = rows.map(r => exAsOf(r.ex)).filter(Boolean).sort((a, b) => b - a)[0];
   app.innerHTML = `
   <div class="hero"><b>${EXERCISES.length} ongoing rating exercises</b> across NHAI, NHIDCL and MoRTH. Each card is a separate exercise with its own data. Tap a card to open its dashboard.</div>
+  ${weekStrip()}
   <div class="excards">${rows.map(({ ex, d, c }) => `
     <button class="excard" data-go="${ex.id}" style="--c:${ex.color}">
       <div class="exhead"><span class="orgtag">${ex.org}</span>${d.isLocal ? `<span class="prevtag">Preview</span>` : ex.manual ? `<span class="mtag">Summary figures</span>` : ""}</div>
       <div class="exname">${esc(ex.name)}</div>
       <div class="exorg">${esc(ex.orgFull)}</div>
       ${c ? `
-      <div class="extotal"><b>${fmt(c.total)}</b> projects <span>· ${ex.manual ? "entered by admin" : "by " + ex.levels.map(l => l[1]).join(" → ")}</span></div>
+      <div class="extotal"><b>${fmt(c.total)}</b> projects ${(w => w ? dl(c.total, w.c.total, null) : "")(wk(ex.id))} <span>· ${ex.manual ? "entered by admin" : "by " + ex.levels.map(l => l[1]).join(" → ")}</span></div>
       ${stackBar(c)}
       <div class="exstats">
-        ${STATUSES.map(s => `<div><i style="background:${s.c}"></i><b>${fmt(c[s.k] || 0)}</b><small>${s.label} · ${pct(c[s.k] || 0, c.total)}%</small></div>`).join("")}
+        ${STATUSES.map(s => `<div><i style="background:${s.c}"></i><b>${fmt(c[s.k] || 0)}</b>${(w => w ? dl(c[s.k] || 0, w.c[s.k] || 0, GOOD[s.k]) : "")(wk(ex.id))}<small>${s.label} · ${pct(c[s.k] || 0, c.total)}%</small></div>`).join("")}
       </div>
       ${sharedLine(ex.id, d.all, c)}
-      <div class="exfoot"><span class="${c.stale ? "warnt" : ""}">⚠ ${nTxt(c.stale)} in progress, no update &gt; ${S.staleDays}d</span><span>${ex.manual ? "Figures" : "Data"} as of ${fdate(exAsOf(ex))}</span></div>`
+      <div class="exfoot"><span class="${c.stale ? "warnt" : ""}">⚠ ${nTxt(c.stale)} in progress, no update &gt; ${S.staleDays}d ${(w => w ? dl(c.stale, w.c.stale, false) : "")(wk(ex.id))}</span><span>${ex.manual ? "Figures" : "Data"} as of ${fdate(exAsOf(ex))}</span></div>`
       : `<div class="exempty">${ex.manual ? "Figures not entered yet" : d.err ? "No data published yet" : "Loading…"}</div>`}
       <div class="exopen">${ex.manual ? "Open summary ›" : "Open dashboard ›"}</div>
     </button>`).join("")}
   </div>
   <div class="card">
-    <h2>At a glance<span class="note">each row is a separate exercise</span></h2>
+    <h2>At a glance<span class="note">each row is a separate exercise${S.W && S.W.target ? ` · ▲▼ = change since ${wkLabel()}` : ""}</span></h2>
     <div class="tscroll"><table class="grp cmp">
       <thead><tr><th>Rating exercise</th><th class="n">Total</th><th class="n">Completed</th><th class="n"><span class="lg">In progress</span><span class="sm">In prog.</span></th><th class="n">Not started</th><th class="n"><span class="lg">No update<br>&gt; ${S.staleDays}d</span><span class="sm">No upd. &gt;${S.staleDays}d</span></th><th class="n" style="color:${SH_COLOR}"><span class="lg">Reviewed &amp;<br>Shared</span><span class="sm">Rev. &amp; shared</span></th></tr></thead>
       <tbody>${rows.map(({ ex, d, c }) => `<tr class="row" data-go="${ex.id}">
         <td class="nm"><div class="gname" style="color:${ex.color}"><span class="orgtag sm" style="--c:${ex.color}">${ex.org}</span> ${esc(ex.name)} ›</div>${c ? stackBar(c) : ""}</td>
-        ${c ? `<td class="n"><b>${fmt(c.total)}</b></td>
-        <td class="n c-done">${fmt(c["COMPLETED"])}<small>${pct(c["COMPLETED"], c.total)}%</small></td>
-        <td class="n c-prog">${fmt(c["IN PROGRESS"])}<small>${pct(c["IN PROGRESS"], c.total)}%</small></td>
-        <td class="n c-ns">${fmt(c["NOT STARTED"])}<small>${pct(c["NOT STARTED"], c.total)}%</small></td>
-        <td class="n" style="color:${c.stale ? "var(--warn)" : "var(--muted)"};font-weight:700">${nTxt(c.stale)}</td>
-        <td class="n" style="color:${SH_COLOR};font-weight:700">${(sh => sh ? fmt(sh.n) + `<small>${pct(sh.n, c.total)}%</small>` : `<span style="color:var(--muted);font-weight:400">–</span>`)(sharedOf(ex.id, d.all || [], true))}</td>` : `<td class="n" colspan="6" style="color:var(--muted)">${ex.manual ? "Not entered yet" : "No data"}</td>`}
+        ${c ? ((w) => `<td class="n"><b>${fmt(c.total)}</b>${w ? dl(c.total, w.c.total, null) : ""}</td>
+        <td class="n c-done">${fmt(c["COMPLETED"])}<small>${pct(c["COMPLETED"], c.total)}%</small>${w ? dl(c["COMPLETED"], w.c["COMPLETED"], true) : ""}</td>
+        <td class="n c-prog">${fmt(c["IN PROGRESS"])}<small>${pct(c["IN PROGRESS"], c.total)}%</small>${w ? dl(c["IN PROGRESS"], w.c["IN PROGRESS"], null) : ""}</td>
+        <td class="n c-ns">${fmt(c["NOT STARTED"])}<small>${pct(c["NOT STARTED"], c.total)}%</small>${w ? dl(c["NOT STARTED"], w.c["NOT STARTED"], false) : ""}</td>
+        <td class="n" style="color:${c.stale ? "var(--warn)" : "var(--muted)"};font-weight:700">${nTxt(c.stale)}${w ? dl(c.stale, w.c.stale, false) : ""}</td>
+        <td class="n" style="color:${SH_COLOR};font-weight:700">${(sh => sh ? fmt(sh.n) + `<small>${pct(sh.n, c.total)}%</small>` + (w ? dl(sh.n, w.shared, true) : "") : `<span style="color:var(--muted);font-weight:400">–</span>`)(sharedOf(ex.id, d.all || [], true))}</td>`)(wk(ex.id)) : `<td class="n" colspan="6" style="color:var(--muted)">${ex.manual ? "Not entered yet" : "No data"}</td>`}
       </tr>`).join("")}</tbody>
     </table></div>
   </div>
@@ -992,6 +1010,7 @@ const appUrl = () => location.origin + location.pathname.replace(/index\.html$/,
 const exUrl = ex => appUrl() + "#" + ex.id;
 function overviewMsg(){
   const L = [`*Rating Exercises – Status as of ${fdate(new Date(today()))}*`];
+  if (S.W && S.W.target) L.push(`_📅 = change since ${wkLabel()}_`);
   for (const ex of EXERCISES) {
     const all = rowsOf(ex.id); L.push("");
     L.push(`*${ex.org} – ${ex.name}*`);
@@ -1001,6 +1020,11 @@ function overviewMsg(){
     if ($("#optStale").checked && c.stale != null) L.push(`⚠️ In progress, no update > ${S.staleDays} days: ${fmt(c.stale)}`);
     const sh = sharedOf(ex.id, all, true);
     if (sh) L.push(`📤 ${SH_FULL}: *${fmt(sh.n)}* (${pct(sh.n, c.total)}%)${sh.asOf ? ` _as of ${asOfTxt(sh.asOf)}_` : ""}`);
+    const w = wk(ex.id);
+    if (w) {
+      const sd = (a, b) => a == null || b == null ? "–" : (a - b > 0 ? "+" : a - b < 0 ? "−" : "±") + fmt(Math.abs(a - b));
+      L.push(`📅 vs ${wkLabel()}: ✅ ${sd(c["COMPLETED"], w.c["COMPLETED"])} | 🔄 ${sd(c["IN PROGRESS"], w.c["IN PROGRESS"])} | ⏳ ${sd(c["NOT STARTED"], w.c["NOT STARTED"])}${sh && w.shared != null ? ` | 📤 ${sd(sh.n, w.shared)}` : ""}`);
+    }
     L.push(`_${ex.manual ? "Figures" : "Data"} as of ${fdate(exAsOf(ex))}_`);
   }
   if ($("#optLink").checked) { L.push(""); L.push(`Dashboard: ${appUrl()}`); }
@@ -1135,9 +1159,17 @@ function buildOverviewReport(){
   K.header(true);
   K.section("At a glance - each row is a separate rating exercise");
   const cols = K.fit([{ h: "Organisation", w: 60 }, { h: "Rating exercise", w: 116 }, { h: "Status", w: 66 }, { h: "Total", w: 40, al: "r" }, { h: "Completed", w: 50, al: "r" }, { h: "In progress", w: 50, al: "r" }, { h: "Not started", w: 50, al: "r" }, { h: `No update > ${S.staleDays} days`, w: 46, al: "r" }, { h: "Reviewed & Shared", w: 0, al: "r" }]);
-  K.table(cols, EXERCISES.filter(ex => exCounts(ex)).map(ex => { const all = rowsOf(ex.id), c = exCounts(ex), sh = sharedOf(ex.id, all, true);
-    return [{ t: ex.org, bold: true, color: ex.rgb }, { t: ex.name, bold: true, sub: `${ex.manual ? "Figures" : "Data"} as of ${fdate(exAsOf(ex))}` }, { bar: c }, { t: fmt(c.total), bold: true }, ...K.statusCols(c),
-      sh ? { t: fmt(sh.n), bold: true, color: SHC, sub: pct(sh.n, c.total) + "%" } : { t: "-", color: PC.muted }]; }), [20, 33, 43]);
+  const sd = (a, b) => a == null || b == null ? "" : (a - b > 0 ? "+" : a - b < 0 ? "-" : "\u00b1") + fmt(Math.abs(a - b));
+  K.table(cols, EXERCISES.filter(ex => exCounts(ex)).map(ex => { const all = rowsOf(ex.id), c = exCounts(ex), sh = sharedOf(ex.id, all, true), w = wk(ex.id);
+    const sc = K.statusCols(c);
+    if (w) {
+      ["COMPLETED", "IN PROGRESS", "NOT STARTED"].forEach((k, i) => { sc[i].sub = `${sc[i].sub}  ${sd(c[k], w.c[k])}`; });
+      if (c.stale != null && w.c.stale != null) sc[3].sub = sd(c.stale, w.c.stale);
+    }
+    return [{ t: ex.org, bold: true, color: ex.rgb }, { t: ex.name, bold: true, sub: `${ex.manual ? "Figures" : "Data"} as of ${fdate(exAsOf(ex))}` }, { bar: c },
+      { t: fmt(c.total), bold: true, sub: w ? sd(c.total, w.c.total) : "" }, ...sc,
+      sh ? { t: fmt(sh.n), bold: true, color: SHC, sub: pct(sh.n, c.total) + "%" + (w && w.shared != null ? "  " + sd(sh.n, w.shared) : "") } : { t: "-", color: PC.muted }]; }), [20, 33, 43]);
+  if (S.W && S.W.target) { K.ensure(16); K.pdf.text(K.M, K.y - 6, `Second line in each cell: % of total and change since ${wkLabel()} (same day last week).`, 7.5, false, PC.muted); K.y += 8; }
   for (const ex of EXERCISES) {
     const all = rowsOf(ex.id), c = exCounts(ex); if (!c) continue;
     K.ensure(150);
@@ -1489,10 +1521,52 @@ async function loadReview(ex){
   r.pub = j && j.map ? j : null;
   applyReview(ex.id);
 }
+/* ---------- Week-on-week (Overview only): status 7 days ago, from history/ kept by the sync script ---------- */
+const isoDay = ms => new Date(ms).toISOString().slice(0, 10);
+async function loadWeek(){
+  try {
+    const idx = await fetch("history/index.json?t=" + Date.now(), { cache: "no-store" }).then(r => r.ok ? r.json() : null);
+    if (!idx || !idx.files) { S.W = { none: true }; return; }
+    const refMs = today() - 7 * 864e5, target = isoDay(refMs);
+    const pick = f => (idx.files[f] || []).filter(d => d <= target).pop() || null;
+    const get = (f, as) => { const d = pick(f); return d ? fetch(`history/${d}/${f}`).then(r => r.ok ? (as === "json" ? r.json() : r.arrayBuffer()) : null).catch(() => null) : Promise.resolve(null); };
+    const oldManual = (await get("shared.json", "json")) || {};
+    const W = { target, refMs, ex: {} };
+    await Promise.all(EXERCISES.map(async ex => {
+      if (ex.manual) { const c = manualCounts(ex.id, oldManual); if (c) W.ex[ex.id] = { c, shared: c.shared }; return; }
+      const buf = await get(ex.file); if (!buf) return;
+      let rows; try { rows = await readProjects(buf); } catch (e) { return; }
+      let shared = null;
+      if (!rows.cols.tranche) {
+        const rv = await get(`${ex.id}-review.json`, "json");
+        if (rv && rv.map) for (const p of rows) { p.tranche = rv.map[upnKey(p.upn)] || ""; p.shared = !!p.tranche; }
+        if (rv && rv.map) shared = rows.filter(p => p.shared).length;
+        else if (oldManual[ex.id] && oldManual[ex.id].count != null) shared = +oldManual[ex.id].count;
+      } else shared = rows.filter(p => p.shared).length;
+      W.ex[ex.id] = { c: counts(rows, refMs), shared };
+    }));
+    S.W = Object.keys(W.ex).length ? W : { none: true };
+  } catch (e) { S.W = { none: true }; }
+  if (!S.ex) render();
+}
+/* a small "▲ 23" chip: good = green, bad = red, neutral = grey */
+function dl(now, old, goodWhenUp){
+  if (now == null || old == null) return "";
+  const d = Math.round((now - old) * 10) / 10;
+  if (!d) return `<em class="wdl z">±0</em>`;
+  const cls = goodWhenUp == null ? "n" : (d > 0) === goodWhenUp ? "g" : "b";
+  return `<em class="wdl ${cls}">${d > 0 ? "▲" : "▼"} ${fmt(Math.abs(d))}</em>`;
+}
+const GOOD = { "COMPLETED": true, "IN PROGRESS": null, "NOT STARTED": false };
+const wk = id => S.W && S.W.ex && S.W.ex[id];
+const sharedNow = ex => { const sh = sharedOf(ex.id, (S.D[ex.id] || {}).all || [], true); return sh ? sh.n : null; };
+const wkLabel = () => S.W && S.W.target ? fdate(parseDate(S.W.target)) : "";
 async function loadAll(){
   route();
-  await Promise.all([loadManual().then(() => render()), ...EXERCISES.filter(ex => !ex.manual).map(ex => Promise.all([loadOne(ex), loadReview(ex)]).then(() => { applyReview(ex.id); if (!S.ex || S.ex === ex.id) render(); }))]);
+  const ready = Promise.all([loadManual().then(() => render()), ...EXERCISES.filter(ex => !ex.manual).map(ex => Promise.all([loadOne(ex), loadReview(ex)]).then(() => { applyReview(ex.id); if (!S.ex || S.ex === ex.id) render(); }))]);
+  await ready;
   render();
+  loadWeek();
 }
 /* pick up a newer app version right away instead of waiting for the browser cache */
 async function checkVersion(){
