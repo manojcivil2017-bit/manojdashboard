@@ -385,7 +385,7 @@ header h1{font-size:18px;line-height:1.2}
 
 <script>
 "use strict";
-const APP_VERSION = "2.4.0";
+const APP_VERSION = "2.4.1";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem("pd_"+k, JSON.stringify(v)); }catch(e){} }
@@ -594,7 +594,7 @@ function bestOverlap(projects){
 
 /* ---------- State ---------- */
 const S = {
-  ex: null, D: {}, R: {}, manual: {}, W: null,
+  ex: null, D: {}, R: {}, manual: {}, W: null, U: {},
   f: { l1: "", l2: "", status: "", q: "", stale: false, shared: false },
   shown: 30, showProj: false, sortKey: "total", sortDir: -1,
   staleDays: LS.get("staleDays", 15)
@@ -815,7 +815,7 @@ function render(){
     </table></div>
     ${list.length > S.shown ? `<button class="btn more" id="btnMore">Show more (${fmt(list.length - S.shown)} left)</button>` : ""}` : `<div class="empty">No projects match these filters.</div>`}
   </div>
-  <div class="foot">${esc(exTitle(ex))} · Source: ${esc(d.source)} · Latest update in file: ${fdate(latestUpd(all))} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
+  <div class="foot">${esc(exTitle(ex))} · Source: ${esc(d.source)} · Latest update in file: ${fdate(latestUpd(all))}${S.U[ex.file] ? " · Updated on dashboard: " + istStamp(S.U[ex.file]) : ""} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
   bind();
 }
 const asOfTxt = d => d ? fdate(parseDate(d)) : "";
@@ -889,7 +889,7 @@ function renderHome(){
       </tr>`).join("")}</tbody>
     </table></div>
   </div>
-  <div class="foot">Latest update across exercises: ${fdate(lu)} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
+  <div class="foot">Latest update across exercises: ${latestStamp([...EXERCISES.filter(e => !e.manual).map(e => e.file), "shared.json", ...EXERCISES.map(e => reviewFile(e.id))]) || fdate(lu)} · v${APP_VERSION} · ${$("#btnUpload") ? "Admin" : `<a href="#" id="lnkLogin" style="color:inherit">Admin login</a>`}</div>`;
   document.querySelectorAll("#app [data-go]").forEach(b => b.onclick = () => go(b.dataset.go));
   bindLogin();
 }
@@ -1367,6 +1367,7 @@ $("#btnShPub").onclick = async () => {
     await putFile(MANUAL_FILE, btoa(unescape(encodeURIComponent(json))), "Update Reviewed & Shared numbers");
     S.manual = out; $("#mShared").classList.remove("on"); render();
     banner("ok", "Reviewed & Shared numbers published. Everyone will see them within 1–2 minutes.");
+    markUpdated([MANUAL_FILE]);
   } catch (e) {
     msg.innerHTML = `<div class="banner err">Publishing failed: ${esc(e.message)}<br>You can also tap <b>Download file</b> and upload <b>${MANUAL_FILE}</b> on GitHub.</div>`;
   }
@@ -1391,6 +1392,7 @@ async function publish(ex){
     await putFile(ex.file, b64(d.localBuf), `Update ${ex.org} ${ex.name} data (${d.localFile})`);
     d.isLocal = false; d.pub = d.all; d.source = `${d.localFile} (published)`;
     render(); banner("ok", `Published ${exTitle(ex)}. Everyone opening the link will see this data within 1–2 minutes.`);
+    markUpdated([ex.file]);
   } catch (e) { render(); banner("err", "Publishing failed: " + e.message); }
 }
 
@@ -1493,6 +1495,7 @@ async function publishReview(ex){
     await putFile(reviewFile(ex.id), btoa(unescape(encodeURIComponent(json))), `Update ${ex.org} ${ex.name} review tracker (${rv.source})`);
     r.pub = rv; r.local = null; applyReview(ex.id);
     render(); banner("ok", `Review tracker published for ${exTitle(ex)}. Everyone will see Reviewed & Shared within 1–2 minutes.`);
+    markUpdated([reviewFile(ex.id)]);
   } catch (e) { render(); banner("err", "Publishing failed: " + e.message); }
 }
 
@@ -1561,9 +1564,27 @@ const GOOD = { "COMPLETED": true, "IN PROGRESS": null, "NOT STARTED": false };
 const wk = id => S.W && S.W.ex && S.W.ex[id];
 const sharedNow = ex => { const sh = sharedOf(ex.id, (S.D[ex.id] || {}).all || [], true); return sh ? sh.n : null; };
 const wkLabel = () => S.W && S.W.target ? fdate(parseDate(S.W.target)) : "";
+const istStamp = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).replace(/ (\d{4}),/, " $1,"); };
+async function loadUpdated(){
+  try { const r = await fetch("updated.json?t=" + Date.now(), { cache: "no-store" }); S.U = r.ok ? ((await r.json()).files || {}) : {}; } catch (_) { S.U = {}; }
+}
+const latestStamp = paths => { const t = paths.map(p => S.U[p]).filter(Boolean).sort((a, b) => new Date(b) - new Date(a))[0]; return t ? istStamp(t) : ""; };
+async function markUpdated(paths){
+  try {
+    const token = LS.get("token", ""), repo = LS.get("repo", "") || defaultRepo(); if (!token || !repo) return;
+    const r = await fetch(`https://api.github.com/repos/${repo}/contents/updated.json?ref=main&t=${Date.now()}`, { headers: { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" }, cache: "no-store" });
+    let cur = { files: {} };
+    if (r.ok) { try { cur = JSON.parse(decodeURIComponent(escape(atob((await r.json()).content.replace(/\n/g, ""))))); } catch (_) {} }
+    cur.files = cur.files || {};
+    const now = new Date().toISOString().slice(0, 16) + "Z";
+    for (const p of paths) cur.files[p] = now;
+    await putFile("updated.json", btoa(unescape(encodeURIComponent(JSON.stringify(cur, null, 1)))), "Record update time");
+    Object.assign(S.U, cur.files); render();
+  } catch (_) { /* the time stamp is a nice-to-have: never block publishing */ }
+}
 async function loadAll(){
   route();
-  const ready = Promise.all([loadManual().then(() => render()), ...EXERCISES.filter(ex => !ex.manual).map(ex => Promise.all([loadOne(ex), loadReview(ex)]).then(() => { applyReview(ex.id); if (!S.ex || S.ex === ex.id) render(); }))]);
+  const ready = Promise.all([loadUpdated(), loadManual().then(() => render()), ...EXERCISES.filter(ex => !ex.manual).map(ex => Promise.all([loadOne(ex), loadReview(ex)]).then(() => { applyReview(ex.id); if (!S.ex || S.ex === ex.id) render(); }))]);
   await ready;
   render();
   loadWeek();
