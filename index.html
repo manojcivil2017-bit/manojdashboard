@@ -385,7 +385,7 @@ header h1{font-size:18px;line-height:1.2}
 
 <script>
 "use strict";
-const APP_VERSION = "2.4.2";
+const APP_VERSION = "2.4.3";
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem("pd_"+k); return v===null? d : JSON.parse(v);}catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem("pd_"+k, JSON.stringify(v)); }catch(e){} }
@@ -965,6 +965,9 @@ class PDF {
   rect(x, y, w, h, fill, stroke){
     this.ops.push(`${fill ? this.col(fill) + " rg " : ""}${stroke ? this.col(stroke) + " RG 0.6 w " : ""}${x.toFixed(2)} ${(this.H - y - h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re ${fill && stroke ? "B" : fill ? "f" : "S"}`);
   }
+  tri(x, y, sz, up, c){ const H = this.H, h = sz * 0.9;
+    const pts = up ? [[x, y + h], [x + sz, y + h], [x + sz / 2, y]] : [[x, y], [x + sz, y], [x + sz / 2, y + h]];
+    this.ops.push(`${this.col(c)} rg ${pts.map((p, i) => `${p[0].toFixed(2)} ${(H - p[1]).toFixed(2)} ${i ? "l" : "m"}`).join(" ")} f`); }
   line(x1, y1, x2, y2, c, w = 0.5){ this.ops.push(`${this.col(c)} RG ${w} w ${x1.toFixed(2)} ${(this.H - y1).toFixed(2)} m ${x2.toFixed(2)} ${(this.H - y2).toFixed(2)} l S`); }
   text(x, y, s, size = 10, bold = false, color = [20, 33, 43], align = "left"){
     s = pdfSafe(s);
@@ -1155,12 +1158,84 @@ function pdfKit(title, sub, brand){
   return K;
 }
 function buildOverviewReport(){
-  const K = pdfKit("Rating Exercises - Status Report", "NHAI  |  NHIDCL  |  MoRTH", [20, 33, 43]);
+  const K = pdfKit("Rating Exercises - Status Report", "NHAI  |  NHIDCL  |  MoRTH", [20, 33, 43]), pdf = K.pdf, M = K.M, W = K.W;
   K.header(true);
+  const RED = [192, 38, 45], hasW = !!(S.W && S.W.target);
+  const CH = { g: [[223, 243, 230], PC.done], b: [[253, 228, 228], RED], n: [[234, 238, 242], PC.muted], z: [[234, 238, 242], PC.muted] };
+  /* coloured change chip, like the ▲ 101 chips on the overview page; returns its width */
+  const chipW = (txt) => 15 + pdf.tw(txt, 7.5, true);
+  const chipRaw = (x, y, kind, up, txt) => {
+    const [bg, fg] = CH[kind], w = chipW(txt) + (up == null ? -7 : 0);
+    pdf.rect(x, y, w, 12, bg);
+    if (up != null) pdf.tri(x + 4, y + 3.3, 5.5, up, fg);
+    pdf.text(x + (up == null ? 4 : 11.5), y + 9, txt, 7.5, true, fg);
+    return w;
+  };
+  const chip = (x, y, now, old, goodUp) => {
+    if (now == null || old == null) return 0;
+    const d = Math.round((now - old) * 10) / 10;
+    if (!d) return chipRaw(x, y, "z", null, "± 0");
+    return chipRaw(x, y, goodUp == null ? "n" : (d > 0) === goodUp ? "g" : "b", d > 0, fmt(Math.abs(d)));
+  };
+
+  /* 1. Change since last week banner (same as the overview page) */
+  K.ensure(40);
+  pdf.rect(M, K.y, W, 32, [250, 251, 252], PC.line); pdf.rect(M, K.y, 3.5, 32, [47, 111, 179]);
+  if (hasW) {
+    pdf.text(M + 12, K.y + 13.5, "Change since last week", 10.5, true, PC.ink);
+    pdf.text(M + 12 + pdf.tw("Change since last week", 10.5, true) + 6, K.y + 13.5, "· compared with status on", 8.5, false, PC.muted);
+    pdf.text(M + 12, K.y + 26, wkLabel(), 10, true, PC.ink);
+    let lx = M + W - 8 - [["g", "better"], ["b", "worse"], ["n", "change"]].reduce((a, l) => a + chipW(l[1]) + 6, 0);
+    [["g", true, "better"], ["b", false, "worse"], ["n", true, "change"]].forEach(([k, up, t]) => { lx += chipRaw(lx, K.y + 16, k, up, t) + 6; });
+  } else pdf.text(M + 12, K.y + 19.5, "Week-on-week comparison will appear once status from 7 days ago is available.", 9, false, PC.muted);
+  K.y += 44;
+
+  /* 2. One card per exercise, laid out like the overview page */
+  for (const ex of EXERCISES) {
+    const all = rowsOf(ex.id), c = exCounts(ex); if (!c) continue;
+    const w = hasW ? wk(ex.id) : null, sh = sharedOf(ex.id, all, true);
+    const H = 202; K.ensure(H + 10);
+    const y0 = K.y, x0 = M, P = 14;
+    pdf.rect(x0, y0, W, H, PC.white, PC.line); pdf.rect(x0, y0, W, 4, ex.rgb);
+    let y = y0 + 16;
+    const tagW = pdf.tw(ex.org, 8, true) + 12;
+    pdf.rect(x0 + P, y, tagW, 14, ex.rgb); pdf.text(x0 + P + 6, y + 10, ex.org, 8, true, PC.white);
+    if (ex.manual) { const t = "Summary figures"; pdf.rect(x0 + P + tagW + 6, y, pdf.tw(t, 7.5, true) + 10, 14, [234, 238, 242]); pdf.text(x0 + P + tagW + 11, y + 10, t, 7.5, true, PC.muted); }
+    pdf.text(x0 + W - P, y + 10, `${ex.manual ? "Figures" : "Data"} as of ${fdate(exAsOf(ex))}`, 8, false, PC.muted, "right");
+    y += 30; pdf.text(x0 + P, y, ex.name, 15, true, ex.rgb);
+    y += 12; pdf.text(x0 + P, y, ex.orgFull, 8, false, PC.muted);
+    y += 22; const tt = fmt(c.total); pdf.text(x0 + P, y, tt, 18, true, PC.ink);
+    let tx = x0 + P + pdf.tw(tt, 18, true) + 5; pdf.text(tx, y, "projects", 10, false, PC.ink); tx += pdf.tw("projects", 10, false) + 6;
+    if (w) tx += chip(tx, y - 9.5, c.total, w.c.total, null) + 6;
+    pdf.text(tx, y, "· " + (ex.manual ? "entered by admin" : "by " + ex.levels.map(l => l[1]).join(" > ")), 8.5, false, PC.muted);
+    y += 10; K.bar(x0 + P, y, W - 2 * P, 9, c);
+    y += 17; const gap = 8, bw = (W - 2 * P - gap * 2) / 3;
+    STATUSES.forEach((st, i) => {
+      const bx = x0 + P + i * (bw + gap), v = c[st.k] || 0;
+      pdf.rect(bx, y, bw, 44, [247, 249, 251]); pdf.rect(bx, y, 3, 44, pColor(st.k));
+      pdf.text(bx + 10, y + 17, fmt(v), 15, true, PC.ink);
+      if (w) chip(bx + 10 + pdf.tw(fmt(v), 15, true) + 7, y + 7, v, w.c[st.k] || 0, GOOD[st.k]);
+      pdf.text(bx + 10, y + 35, `${st.label} · ${pct(v, c.total)}%`, 8, false, PC.muted);
+    });
+    y += 50;
+    pdf.rect(x0 + P, y, W - 2 * P, 22, [243, 238, 250]); pdf.rect(x0 + P, y, 3, 22, SHC);
+    pdf.text(x0 + P + 10, y + 14.5, "Reviewed & shared with field units", 8.5, false, SHC);
+    let sx = x0 + P + 10 + pdf.tw("Reviewed & shared with field units", 8.5, false) + 8;
+    const sv = sh ? fmt(sh.n) : "-"; pdf.text(sx, y + 15, sv, 11, true, SHC); sx += pdf.tw(sv, 11, true) + 6;
+    if (w && sh) sx += chip(sx, y + 5, sh.n, w.shared, true) + (w.shared != null ? 6 : 0);
+    pdf.text(x0 + W - P - 8, y + 14.5, sh ? `${pct(sh.n, c.total)}% of total${sh.asOf ? " · as of " + asOfTxt(sh.asOf) : ""}` : "Not entered yet", 8, false, PC.muted, "right");
+    y += 36;
+    const ft = `! ${c.stale == null ? "-" : fmt(c.stale)} in progress, no update > ${S.staleDays}d`;
+    pdf.text(x0 + P, y, ft, 8.5, !!c.stale, c.stale ? PC.warn : PC.muted);
+    if (w && c.stale != null) chip(x0 + P + pdf.tw(ft, 8.5, !!c.stale) + 6, y - 9, c.stale, w.c.stale, false);
+    K.y = y0 + H + 10;
+  }
+
+  /* 3. At a glance table */
   K.section("At a glance - each row is a separate rating exercise");
   const cols = K.fit([{ h: "Organisation", w: 60 }, { h: "Rating exercise", w: 116 }, { h: "Status", w: 66 }, { h: "Total", w: 40, al: "r" }, { h: "Completed", w: 50, al: "r" }, { h: "In progress", w: 50, al: "r" }, { h: "Not started", w: 50, al: "r" }, { h: `No update > ${S.staleDays} days`, w: 46, al: "r" }, { h: "Reviewed & Shared", w: 0, al: "r" }]);
-  const sd = (a, b) => a == null || b == null ? "" : (a - b > 0 ? "+" : a - b < 0 ? "-" : "\u00b1") + fmt(Math.abs(a - b));
-  K.table(cols, EXERCISES.filter(ex => exCounts(ex)).map(ex => { const all = rowsOf(ex.id), c = exCounts(ex), sh = sharedOf(ex.id, all, true), w = wk(ex.id);
+  const sd = (a, b) => a == null || b == null ? "" : (a - b > 0 ? "+" : a - b < 0 ? "-" : "±") + fmt(Math.abs(a - b));
+  K.table(cols, EXERCISES.filter(ex => exCounts(ex)).map(ex => { const all = rowsOf(ex.id), c = exCounts(ex), sh = sharedOf(ex.id, all, true), w = hasW && wk(ex.id);
     const sc = K.statusCols(c);
     if (w) {
       ["COMPLETED", "IN PROGRESS", "NOT STARTED"].forEach((k, i) => { sc[i].sub = `${sc[i].sub}  ${sd(c[k], w.c[k])}`; });
@@ -1169,33 +1244,7 @@ function buildOverviewReport(){
     return [{ t: ex.org, bold: true, color: ex.rgb }, { t: ex.name, bold: true, sub: `${ex.manual ? "Figures" : "Data"} as of ${fdate(exAsOf(ex))}` }, { bar: c },
       { t: fmt(c.total), bold: true, sub: w ? sd(c.total, w.c.total) : "" }, ...sc,
       sh ? { t: fmt(sh.n), bold: true, color: SHC, sub: pct(sh.n, c.total) + "%" + (w && w.shared != null ? "  " + sd(sh.n, w.shared) : "") } : { t: "-", color: PC.muted }]; }), [20, 33, 43]);
-  if (S.W && S.W.target) { K.ensure(16); K.pdf.text(K.M, K.y - 6, `Second line in each cell: % of total and change since ${wkLabel()} (same day last week).`, 7.5, false, PC.muted); K.y += 8; }
-  if (S.W && S.W.target) {
-    /* a clear week-on-week table: big coloured change, "was" figure underneath */
-    K.section(`Change since ${wkLabel()} (same day last week)`);
-    const RED = [192, 38, 45];
-    const chg = (now, old, goodUp) => {
-      if (now == null || old == null) return { t: "-", color: PC.muted, sub: now == null ? "" : `no record for ${wkLabel().replace(/ \d{4}$/, "")}` };
-      const d = Math.round((now - old) * 10) / 10;
-      const color = !d || goodUp == null ? PC.ink : (d > 0) === goodUp ? PC.done : RED;
-      return { t: d ? (d > 0 ? "+" : "-") + fmt(Math.abs(d)) : "No change", bold: true, color, sub: `${fmt(old)} -> ${fmt(now)}` };
-    };
-    const wc = K.fit([{ h: "Organisation", w: 60 }, { h: "Rating exercise", w: 120 }, { h: "Completed", w: 62, al: "r" }, { h: "In progress", w: 62, al: "r" }, { h: "Not started", w: 62, al: "r" }, { h: `No update > ${S.staleDays} days`, w: 62, al: "r" }, { h: "Reviewed & Shared", w: 0, al: "r" }]);
-    K.table(wc, EXERCISES.filter(ex => exCounts(ex) && wk(ex.id)).map(ex => { const c = exCounts(ex), w = wk(ex.id), sh = sharedOf(ex.id, rowsOf(ex.id), true);
-      return [{ t: ex.org, bold: true, color: ex.rgb }, { t: ex.name, bold: true },
-        chg(c["COMPLETED"] || 0, w.c["COMPLETED"] || 0, true), chg(c["IN PROGRESS"] || 0, w.c["IN PROGRESS"] || 0, null), chg(c["NOT STARTED"] || 0, w.c["NOT STARTED"] || 0, false),
-        chg(c.stale, w.c.stale, false), chg(sh ? sh.n : null, w.shared, true)]; }), [20, 33, 43]);
-    K.ensure(16); K.pdf.text(K.M, K.y - 6, `Green = better, red = needs attention. Second line: figure on ${wkLabel()} -> today.`, 7.5, false, PC.muted); K.y += 8;
-  }
-  for (const ex of EXERCISES) {
-    const all = rowsOf(ex.id), c = exCounts(ex); if (!c) continue;
-    K.ensure(150);
-    K.pdf.rect(K.M, K.y, 4, 16, ex.rgb);
-    K.pdf.text(K.M + 10, K.y + 12, `${ex.org} - ${ex.name}`, 12.5, true, ex.rgb);
-    K.pdf.text(K.M + K.W, K.y + 12, `${ex.manual ? "Summary figures" : "Data"} as of ${fdate(exAsOf(ex))}`, 8, false, PC.muted, "right");
-    K.y += 26;
-    K.kpis(c, ex.rgb); K.sharedBanner(sharedOf(ex.id, all, true), c.total); K.overall(c); K.y += 6;
-  }
+  if (hasW) { K.ensure(16); pdf.text(M, K.y - 6, `Second line in each cell: % of total and change since ${wkLabel()} (same day last week).`, 7.5, false, PC.muted); K.y += 8; }
   return K.finish("Rating_Exercises_Overview");
 }
 function buildReport(){
